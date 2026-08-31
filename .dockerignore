@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+out
+.vinext
+.git
+work
+outputs
+npm-debug.log*

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="First Rec. logo">
+  <title>First Rec. logo</title>
+  <desc>Custom rounded F monogram with recording dot and First Rec. wordmark.</desc>
+    <rect x="48" y="56" width="400" height="400" rx="72" fill="#D94557"/>
+    <path fill="#FFFFFF" d="M148 130H352a36 36 0 0 1 0 72H184v61h106a36 36 0 0 1 0 72H184v109a12 12 0 0 1-12 12h-48a12 12 0 0 1-12-12V166a36 36 0 0 1 36-36Z"/>
+    <circle cx="440" cy="168" r="41" fill="#FFFFFF"/>
+    <circle cx="440" cy="168" r="30" fill="#D94557"/></svg>
