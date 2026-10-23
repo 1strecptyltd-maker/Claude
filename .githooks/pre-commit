@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Block commits that add any file larger than 50 MB.
+# Enable once per clone:  git config core.hooksPath .githooks
+limit=52428800
+status=0
+git diff --cached --name-only --diff-filter=AM -z | while IFS= read -r -d '' f; do
+  [ -f "$f" ] || continue
+  size=$(wc -c < "$f" | tr -d ' ')
+  if [ "$size" -gt "$limit" ]; then
+    echo "pre-commit: '$f' is $((size / 1048576)) MB (limit 50 MB). Keep it on the NAS/Mac instead." >&2
+    exit 1
+  fi
+done || status=1
+exit $status

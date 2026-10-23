@@ -1,6 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# ─── Dependencies ────────────────────────────────────────────────
 /node_modules
 /.pnp
 .pnp.*
@@ -10,31 +8,125 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# ─── Build output & caches ───────────────────────────────────────
+/dist/
+/out/
+/build-output/
 /.next/
 /.vinext/
-/out/
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+/.wrangler/
+/.vercel
+/coverage
+.vite/
+.vite-temp/
+.turbo/
+.cache/
+.eslintcache
+*.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-/dist/
-/.wrangler/
+# Local working folders (old ZIPs, backups, scratch output)
 /outputs/
 /work/
+
+# ─── Secrets: env files, keys, tokens, credentials ──────────────
+# Only .env.example (variable names, no values) is committed.
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+credentials*.json
+service-account*.json
+*secret*.json
+*token*.json
+secrets/
+.secrets/
+# airouter connection settings must never be copied into this repo
+ar.env
+
+# ─── Video files & original/raw media ────────────────────────────
+# Web videos live on the Mac / NAS, not in Git (see HANDOFF.md → "Not in Git").
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.m4v
+*.M4V
+*.mxf
+*.MXF
+*.avi
+*.mkv
+*.webm
+*.braw
+*.r3d
+*.R3D
+*.prproj
+*.drp
+# Camera RAW / layered originals
+*.cr2
+*.CR2
+*.cr3
+*.CR3
+*.nef
+*.NEF
+*.arw
+*.ARW
+*.raf
+*.RAF
+*.dng
+*.DNG
+*.orf
+*.rw2
+*.tif
+*.tiff
+*.TIF
+*.psd
+*.psb
+*.xmp
+# Conventional folders for originals, if ever created inside the repo
+/originals/
+/raw/
+/footage/
+/source-media/
+
+# ─── Files over 50 MB ────────────────────────────────────────────
+# .gitignore cannot filter by size. The .githooks/pre-commit hook blocks any
+# staged file over 50 MB. Enable it once per clone:
+#   git config core.hooksPath .githooks
+
+# ─── OS / editor ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+
+# ─── Not cleared for this PUBLIC repo (see HANDOFF.md §6) ────────
+# Internal Drive index — must never be published.
+/app/_data/approved.ts
+/app/work/approved/
+# Client images still pending publication clearance.
+# Delete a line here only after that client's public-display approval is on file.
+/public/portfolio/bentley/
+/public/portfolio/chongguang-workshop/
+/public/portfolio/eimele/
+/public/portfolio/emp-dairy-lactoferrin/
+/public/portfolio/geely/
+/public/portfolio/hatman/
+/public/portfolio/malaymalay/
+/public/portfolio/mirror-and-moon/
+/public/portfolio/molly-tea/
+/public/portfolio/stasis/
+/public/portfolio/food-hospitality/
