@@ -52,16 +52,83 @@ The production container is Nginx serving only the exported static files. It res
 - Compose file: `compose.truenas.yaml`
 - NAS deployment directory: `/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio`
 
-Build and test locally with the production URL before uploading the static export. Do not set `FIRST_REC_INCLUDE_INTERNAL`; the deployable build is the default public one:
+Build and test locally with the production URL before uploading the static export. Use the Node version in `.node-version`. Do not set `FIRST_REC_INCLUDE_INTERNAL`; the deployable build is the default public one:
 
 ```sh
+npm ci
 NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm test
+npm run lint
 ```
 
-After replacing `dist/client/` on the NAS, apply the deployment from the NAS directory:
+### Pre-upload check
+
+Run the public-build check on the finished `dist/client/` (no `-- --allow-*` flags for a real release):
 
 ```sh
-sudo /usr/bin/docker compose -f compose.truenas.yaml up -d
+npm run check:public -- --expect-site-url=https://www.firstrec.work
 ```
+
+It exits non-zero and prints a grouped report when the export:
+
+- contains `localhost` / `127.0.0.1` or `http://` site URLs (HTML, OG/canonical meta, sitemap, RSC payloads, `host:port` forms in JS);
+- leaks internal data: `/work/approved`, `drive.google.com`, `docs.google.com` or Google Drive folder-ID-like strings;
+- references a local `src` / `href` / `poster` / `srcset` / CSS `url()` file that is not in `dist/client/`;
+- lacks `404.html`, a route's `index.html`, or still has flat `route.html` files (normalisation did not run);
+- shows no https absolute meta URL (so `NEXT_PUBLIC_SITE_URL` was not set) or a different origin than `--expect-site-url`;
+- contains the default contact email `hello@cheese.studio`.
+
+Flags for local/preview builds only: `--allow-missing-media` turns the videos listed in `HANDOFF.md` section 6c into warnings (or pass `--allow-missing-media=/path/a.mp4,/path/b.jpg`); `--allow-default-email` turns the default email into a warning. Do not upload a build that only passes with these flags.
+
+State on 2026-10-30 (build from this repository with `NEXT_PUBLIC_SITE_URL=https://www.firstrec.work`, no contact email set): **FAIL**, which is expected until U3 and the media copy are done:
+
+- 103 missing files: the 9 videos from `HANDOFF.md` 6c, plus 94 images under the 11 `public/portfolio/` folders not committed (6b: `food-hospitality` 45, `chongguang-workshop`, `emp-dairy-lactoferrin`, `hatman`, `mirror-and-moon` 6 each, `bentley`, `eimele`, `geely`, `malaymalay` 5 each, `stasis` 4, `molly-tea` 1);
+- default email `hello@cheese.studio` in 86 files;
+- no localhost, `http://`, `/work/approved` or Drive leaks; all routes have `index.html`; `404.html` exists.
+
+### Upload with backup and rollback
+
+On the NAS, from a shell with sudo (paths contain a space, keep the quotes):
+
+```sh
+DEPLOY="/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio"
+STAMP=$(date +%Y%m%d-%H%M%S)
+cd "$DEPLOY"
+
+# 1. Back up the live export and compose file.
+sudo cp -a dist/client "dist/client.bak-$STAMP"
+sudo cp -a compose.truenas.yaml "compose.truenas.yaml.bak-$STAMP"
+```
+
+From the build machine, upload the checked export into a new sibling folder, not over the live one (`<nas-user>@<nas-host>` is whatever SSH login the NAS uses; any copy method that preserves the folder works):
+
+```sh
+rsync -a --delete dist/client/ "<nas-user>@<nas-host>:/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio/dist/client.new-<STAMP>/"
+```
+
+Back on the NAS, swap the folders and recreate the container. `--force-recreate` is required: the bind mount follows the original folder, so a plain `up -d` would keep serving the renamed old export.
+
+```sh
+# 2. Swap in the new export.
+sudo mv dist/client "dist/client.prev-$STAMP"
+sudo mv "dist/client.new-$STAMP" dist/client
+sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
+
+# 3. Verify against the origin (expect 200, 200, 200, 404 and the https OG domain).
+for p in / /work/ /contact/ /work/nvidia/ /does-not-exist/; do
+  printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:30040$p")" "$p"
+done
+curl -s http://127.0.0.1:30040/ | grep -o 'og:image" content="[^"]*"'
+```
+
+Then check `https://www.firstrec.work` in a browser: home, a case page with images and video, the contact email and a missing URL.
+
+```sh
+# 4. Roll back if any check fails.
+sudo mv dist/client "dist/client.failed-$STAMP"
+sudo mv "dist/client.prev-$STAMP" dist/client
+sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
+```
+
+Keep `dist/client.bak-$STAMP` until the new release has been verified; it is an independent copy if the swap folders get mixed up. Note that the stock `nginx:1.27-alpine` config used here has no `error_page` rule, so a missing URL returns Nginx's default 404 page rather than `404.html`; this has not been checked on the live server.
 
 The TrueNAS-specific Compose file mounts the prebuilt static export read-only into Nginx. It deliberately reuses the former WordPress port so the existing Nginx Proxy Manager route does not need to change.
