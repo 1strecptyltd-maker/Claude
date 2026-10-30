@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { CaseStudyPage } from "../../_components/CaseStudyPage";
-import { caseStudies } from "../../_data/site";
+import { getCaseStudy } from "../../_data/project-access";
 
-export const metadata: Metadata = { title: "Molly Tea | First Rec.", description: caseStudies[1].summary };
+const project = getCaseStudy("molly-tea");
+export const metadata: Metadata = { title: "Molly Tea | First Rec.", description: project.summary };
 export const dynamic = "force-static";
-export default function Page() { return <CaseStudyPage project={caseStudies[1]} number="02" />; }
+export default function Page() { return <CaseStudyPage project={project} number="02" />; }

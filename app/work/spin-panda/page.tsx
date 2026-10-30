@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { CaseStudyPage } from "../../_components/CaseStudyPage";
-import { caseStudies } from "../../_data/site";
+import { getCaseStudy } from "../../_data/project-access";
 
-const project = caseStudies.find((item) => item.slug === "spin-panda")!;
+const project = getCaseStudy("spin-panda");
 export const metadata: Metadata = { title: "Spin Panda | First Rec.", description: project.summary };
 export const dynamic = "force-static";
 

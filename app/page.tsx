@@ -1,9 +1,12 @@
 import Image from "next/image";
 import { ContactBand } from "./_components/ContactBand";
 import { PageShell } from "./_components/PageShell";
+import { getCaseStudy } from "./_data/project-access";
 import { caseStudies, services } from "./_data/site";
 
 export const dynamic = "force-static";
+
+const heroProject = getCaseStudy("geely-australia");
 
 export default function Home() {
   return (
@@ -20,7 +23,7 @@ export default function Home() {
         </div>
         <figure className="hero-media">
           <div className="hero-image-frame">
-            <Image src={caseStudies[0].image} alt={caseStudies[0].alt} fill priority sizes="(max-width: 767px) 100vw, 48vw" />
+            <Image src={heroProject.image} alt={heroProject.alt} fill priority sizes="(max-width: 767px) 100vw, 48vw" />
           </div>
           <figcaption>Internal review asset / Publication clearance pending</figcaption>
         </figure>
