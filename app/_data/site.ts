@@ -1,3 +1,5 @@
+import type { CaseStudyBlock } from "../_components/CaseStudyBlocks";
+
 export type CaseStudy = {
   slug: string;
   client: string;
@@ -32,6 +34,8 @@ export type CaseStudy = {
     title: string;
     type?: string;
   }>;
+  /** Optional modular layout. When present, CaseStudyPage renders these blocks instead of the fixed template. */
+  blocks?: CaseStudyBlock[];
 };
 
 export const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@cheese.studio";
@@ -437,6 +441,51 @@ export const caseStudies: CaseStudy[] = [
       poster: "/portfolio/spin-panda/hero.jpg",
       title: "Spin Panda film",
     },
+
+    blocks: [
+      { type: "hero" },
+      { type: "fullImage" },
+      {
+        type: "facts",
+        items: [
+          { label: "Channels", value: "Opening event / Film / Photography" },
+          { label: "First Rec. role", value: "Production / Film / Photography" },
+          { label: "Media partner", value: "Starlink" },
+          { label: "Date", value: "22 August 2026" },
+          { label: "Results" },
+        ],
+      },
+      {
+        type: "intro",
+        label: "01 / Context",
+        text: "The Central Park opening event moved between the storefront, surrounding precinct, busy self-service interior, food details and guests within one live service environment.",
+      },
+      {
+        type: "twoColumn",
+        columns: [
+          {
+            label: "02 / Response",
+            text: "First Rec. produced the coverage through media intermediary Starlink, delivering one horizontal event film and a seven-image photography selection that moves from the public arrival to the in-store experience.",
+          },
+          {
+            label: "03 / Value",
+            text: "A publicly authorised film and photography archive of the 22 August 2026 opening event, bringing together the store, self-service format, food presentation and guest atmosphere.",
+          },
+        ],
+      },
+      { type: "video" },
+      { type: "deliverables", items: ["One horizontal event film", "Seven-image photography selection"] },
+      { type: "gallery" },
+      {
+        type: "credits",
+        items: [
+          { role: "Client", name: "Spin Panda" },
+          { role: "Production / Film / Photography", name: "First Rec." },
+          { role: "Media partner", name: "Starlink" },
+        ],
+      },
+      { type: "next", slug: "dr-lewinn" },
+    ],
   },
   {
     slug: "spring-bistro",

@@ -162,6 +162,32 @@ h1, h2, h3 { font-family: var(--display); font-weight: 440; }
 .case-gallery figure:nth-child(6):last-child { grid-column: 7 / span 6; }
 .case-gallery img { object-fit: contain; background: var(--paper); }
 .case-back { padding: 0 var(--page-x) 5rem; }
+.case-lead-image--ratio { height: auto; max-height: min(90dvh, 1100px); }
+.case-block-intro { display: grid; grid-template-columns: 1fr 2.1fr; gap: 4rem; padding: var(--section-y) var(--page-x) 3rem; }
+.case-block-intro > p, .case-block-columns article > p:first-child, .case-block-list dt { margin: 0; color: var(--muted); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
+.case-block-intro h2 { max-width: 58rem; margin: 0; font-size: clamp(1.7rem, 3.2vw, 3.5rem); line-height: 1.15; letter-spacing: -.04em; }
+.case-block-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 0 4rem; padding: 0 var(--page-x) var(--section-y); }
+.case-block-columns article { padding: 3rem 0 0; border-top: 1px solid var(--line); }
+.case-block-columns h2 { margin: 1.4rem 0 0; font-size: clamp(1.5rem, 2.4vw, 2.4rem); line-height: 1.15; letter-spacing: -.035em; }
+.case-block-columns-text { max-width: 40rem; margin: 1.4rem 0 0; font-family: var(--display); font-size: clamp(1.2rem, 1.8vw, 1.6rem); line-height: 1.4; letter-spacing: -.02em; }
+.case-block-list { display: grid; grid-template-columns: 1fr 2.1fr; gap: 1.5rem 4rem; padding: 3rem var(--page-x); border-top: 1px solid var(--line); }
+.case-block-list h2 { margin: 0; font-size: clamp(1.5rem, 2.4vw, 2.4rem); letter-spacing: -.035em; }
+.case-block-list ul, .case-block-list dl { margin: 0; padding: 0; list-style: none; }
+.case-block-list li, .case-block-list dl > div { padding: 1rem 0; border-bottom: 1px solid var(--line); font-size: clamp(1rem, 1.4vw, 1.2rem); }
+.case-block-list li:first-child, .case-block-list dl > div:first-child { padding-top: 0; }
+.case-block-list dl > div { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: baseline; }
+.case-block-list dd { margin: 0; }
+.case-block-bts { display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; padding: var(--section-y) var(--page-x); border-top: 1px solid var(--line); }
+.case-block-bts h2 { margin: 0 0 1.4rem; font-size: clamp(2rem, 3.6vw, 3.8rem); line-height: 1; letter-spacing: -.05em; }
+.case-block-bts div > p:last-child { max-width: 28rem; color: var(--muted); line-height: 1.65; }
+.case-block-bts-images { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 2rem); align-items: start; }
+.case-block-bts-images figure { position: relative; margin: 0; overflow: hidden; background: var(--image-bg); }
+.case-block-next { padding: 4rem var(--page-x); border-top: 1px solid var(--line); }
+.case-block-next .eyebrow { margin-bottom: 1rem; }
+.case-block-next a { display: grid; gap: .6rem; width: fit-content; transition: color .25s ease; }
+.case-block-next a:hover { color: var(--accent); }
+.case-block-next span { font-family: var(--display); font-size: clamp(2.4rem, 6vw, 6rem); line-height: 1; letter-spacing: -.055em; }
+.case-block-next em { color: var(--muted); font-size: .68rem; font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
 
 .service-list { padding: 0 var(--page-x) var(--section-y); }
 .service-row { min-height: 15rem; display: grid; grid-template-columns: 3.5rem 1.1fr 1fr .65fr; gap: 2rem; align-items: start; padding: 2.7rem 0; border-bottom: 1px solid var(--line); }
@@ -308,6 +334,12 @@ footer p { margin: 0; color: var(--muted); font-size: .68rem; letter-spacing: .0
   .case-film-list--multiple .case-film-item:first-child { grid-column: auto; }
   .case-film-item figcaption { grid-template-columns: 1fr; gap: .4rem; }
   .case-gallery { display: block; }
+  .case-lead-image--ratio { height: auto; }
+  .case-block-intro, .case-block-list, .case-block-bts { grid-template-columns: 1fr; gap: 1.5rem; }
+  .case-block-columns { grid-template-columns: 1fr; }
+  .case-block-columns article { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+  .case-block-list dl > div { grid-template-columns: 1fr; gap: .3rem; }
+  .case-block-bts-images { grid-template-columns: 1fr; }
   .case-gallery figure, .case-gallery figure:nth-child(2), .case-gallery figure:nth-child(3), .case-gallery figure:nth-child(4) { width: 100%; aspect-ratio: 4 / 5; margin-bottom: 1.25rem; }
   .service-row, .equipment-list article { min-height: 0; grid-template-columns: 2.5rem 1fr; gap: 1rem; }
   .service-row p, .service-row em, .equipment-list ul { grid-column: 2; }
