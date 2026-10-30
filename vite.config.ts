@@ -47,6 +47,11 @@ export default defineConfig(async () => {
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
+    // Public builds export only cases marked "public" in app/_data/publication.ts.
+    // FIRST_REC_INCLUDE_INTERNAL=1 builds the internal-review preview with every case.
+    define: {
+      "process.env.FIRST_REC_INCLUDE_INTERNAL": JSON.stringify(process.env.FIRST_REC_INCLUDE_INTERNAL === "1" ? "1" : ""),
+    },
     plugins: [
       vinext(),
       sites(),

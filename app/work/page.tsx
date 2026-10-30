@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactBand } from "../_components/ContactBand";
 import { PageShell } from "../_components/PageShell";
-import { caseStudies } from "../_data/site";
+import { includeInternal, listedCaseStudies } from "../_data/publication";
 
 export const metadata: Metadata = { title: "Work | First Rec.", description: "Selected visual production relationships across brands, hospitality and live events." };
 export const dynamic = "force-static";
@@ -26,9 +26,14 @@ const workGroups = [
   {
     id: "food-hospitality",
     label: "Food + hospitality",
-    description: "Newly ingested Drive selections across food, service, spaces and social-ready product imagery.",
+    description: "Food, service, spaces and social-ready product imagery for hospitality teams.",
   },
 ] as const;
+
+const caseStudies = listedCaseStudies();
+// Categories with nothing this build may publish are left out rather than shown empty.
+const visibleGroups = workGroups.filter((group) => caseStudies.some((project) => project.discipline === group.label));
+const hasFoodCollection = caseStudies.some((project) => project.discipline === "Food + hospitality");
 
 export default function WorkPage() {
   return (
@@ -38,16 +43,16 @@ export default function WorkPage() {
         <h1>Built for the moment.<br />Useful after it.</h1>
         <p>Photography, short-form film and production support shaped around how each team needs to use the work.</p>
       </header>
-      <aside className="preview-note">Geely, Molly Tea, Eimele, Bentley, Chongguang Workshop, Hatman, MalayMalay, Mirror &amp; Moon, Stasis and EMP Dairy / Lactoferrin media is included for internal review only. Publication clearance is pending.</aside>
-      <p className="work-archive-link"><a className="text-link" href="/work/food-hospitality/">Open the local Food + hospitality selection</a></p>
+      {includeInternal ? <aside className="preview-note">Geely, Molly Tea, Eimele, Bentley, Chongguang Workshop, Hatman, MalayMalay, Mirror &amp; Moon, Stasis and EMP Dairy / Lactoferrin media is included for internal review only. Publication clearance is pending.</aside> : null}
+      {hasFoodCollection ? <p className="work-archive-link"><a className="text-link" href="/work/food-hospitality/">Open the Food + hospitality selection</a></p> : null}
       <nav className="work-category-nav" aria-label="Work categories">
-        {workGroups.map((group, index) => {
+        {visibleGroups.map((group, index) => {
           const count = caseStudies.filter((project) => project.discipline === group.label).length;
           return <a href={`#${group.id}`} key={group.id}><span>{String(index + 1).padStart(2, "0")} / {group.label}</span><em>{String(count).padStart(2, "0")}</em></a>;
         })}
       </nav>
       <section className="work-index" aria-label="Case studies">
-        {workGroups.map((group, groupIndex) => {
+        {visibleGroups.map((group, groupIndex) => {
           const projects = caseStudies.filter((project) => project.discipline === group.label);
           return (
             <section className="work-category" id={group.id} aria-labelledby={`${group.id}-heading`} key={group.id}>

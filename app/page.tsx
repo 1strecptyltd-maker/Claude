@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { ContactBand } from "./_components/ContactBand";
 import { PageShell } from "./_components/PageShell";
-import { getCaseStudy } from "./_data/project-access";
-import { caseStudies, services } from "./_data/site";
+import { heroCaseStudy, listedCaseStudies } from "./_data/publication";
+import { services } from "./_data/site";
 
 export const dynamic = "force-static";
 
-const heroProject = getCaseStudy("geely-australia");
+const heroProject = heroCaseStudy();
+const projects = listedCaseStudies();
 
 export default function Home() {
   return (
@@ -25,7 +26,7 @@ export default function Home() {
           <div className="hero-image-frame">
             <Image src={heroProject.image} alt={heroProject.alt} fill priority sizes="(max-width: 767px) 100vw, 48vw" />
           </div>
-          <figcaption>Internal review asset / Publication clearance pending</figcaption>
+          <figcaption>{heroProject.client} / {heroProject.category}</figcaption>
         </figure>
       </section>
 
@@ -42,7 +43,7 @@ export default function Home() {
           <p>Different scales and formats, connected by practical production and a fast response to changing needs.</p>
         </div>
         <div className="featured-list">
-          {caseStudies.map((project, index) => (
+          {projects.map((project, index) => (
             <a className="featured-project home-reveal" href={`/work/${project.slug}/`} key={project.slug}>
               <span>{String(index + 1).padStart(2, "0")}</span><strong>{project.client}</strong><em>{project.category}</em><b>View project</b>
             </a>

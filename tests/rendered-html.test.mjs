@@ -1,10 +1,30 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import test from "node:test";
+
+// `npm test` checks the public build; `npm run test:internal` checks the internal-review preview build.
+const includeInternal = process.env.FIRST_REC_INCLUDE_INTERNAL === "1";
+const internalOnly = { skip: !includeInternal && "internal-review cases are not exported; run npm run test:internal" };
+const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
 
 const pages = [
   ["index.html", /Visual production that/],
   ["work/index.html", /Built for the moment/],
+  ["work/food-hospitality/index.html", /Made to be/],
+  ["work/spin-panda/index.html", /Spin Panda/],
+  ["work/dr-lewinn/index.html", /Dr\. LeWinn/],
+  ["work/indiba-icc/index.html", /INDIBA/],
+  ["work/jo-loves/index.html", /Jo Loves/],
+  ["work/mm-karaoke/index.html", /MM Karaoke/],
+  ["work/nvidia/index.html", /NVIDIA/],
+  ["services/index.html", /The right production/],
+  ["about/index.html", /First Rec\.|Cheese/],
+  ["equipment/index.html", /Production equipment/],
+  ["contact/index.html", /Tell us what the work needs to do/],
+];
+
+const internalPages = [
   ["work/geely-australia/index.html", /Geely Australia/],
   ["work/molly-tea/index.html", /Molly Tea/],
   ["work/stasis-clinic/index.html", /Stasis Clinic/],
@@ -14,25 +34,21 @@ const pages = [
   ["work/hatman/index.html", /Hatman/],
   ["work/malaymalay/index.html", /MalayMalay/],
   ["work/mirror-and-moon/index.html", /Mirror &amp; Moon|Mirror & Moon/],
-  ["work/spin-panda/index.html", /Spin Panda/],
-  ["work/dr-lewinn/index.html", /Dr\. LeWinn/],
-  ["work/indiba-icc/index.html", /INDIBA/],
-  ["work/jo-loves/index.html", /Jo Loves/],
-  ["work/mm-karaoke/index.html", /MM Karaoke/],
-  ["work/nvidia/index.html", /NVIDIA/],
   ["work/emp-dairy-lactoferrin/index.html", /EMP Dairy/],
-  ["services/index.html", /The right production/],
-  ["about/index.html", /First Rec\.|Cheese/],
-  ["equipment/index.html", /Production equipment/],
-  ["contact/index.html", /Tell us what the work needs to do/],
 ];
 
 test("exports every First Rec. portfolio route as static HTML", async () => {
-  for (const [path, expected] of pages) {
-    const html = await readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
+  for (const [path, expected] of includeInternal ? [...pages, ...internalPages] : pages) {
+    const html = await read(path);
     assert.match(html, expected);
     assert.match(html, /aria-label="Primary navigation"/);
     assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
+  }
+});
+
+test("public build does not export internal-review case pages", { skip: includeInternal && "internal-review preview build" }, () => {
+  for (const [path] of internalPages) {
+    assert.equal(existsSync(new URL(`../dist/client/${path}`, import.meta.url)), false, `dist/client/${path} must not be exported`);
   }
 });
 
@@ -69,19 +85,18 @@ test("keeps metadata, static export settings and accessibility fallbacks", async
   assert.match(data, /Publication clearance pending/);
 });
 
-test("renders reviewed media without presenting Molly Tea placeholders as approved work", async () => {
-  const [geely, molly, stasis, bentley, eimele, chongguang, hatman, malaymalay, mirrorAndMoon, spinPanda, work] = await Promise.all([
-    readFile(new URL("../dist/client/work/geely-australia/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/molly-tea/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/stasis-clinic/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/bentley/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/eimele/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/chongguang-workshop/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/hatman/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/malaymalay/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/mirror-and-moon/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/spin-panda/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/index.html", import.meta.url), "utf8"),
+test("renders reviewed internal media without presenting Molly Tea placeholders as approved work", internalOnly, async () => {
+  const [geely, molly, stasis, bentley, eimele, chongguang, hatman, malaymalay, mirrorAndMoon, work] = await Promise.all([
+    read("work/geely-australia/index.html"),
+    read("work/molly-tea/index.html"),
+    read("work/stasis-clinic/index.html"),
+    read("work/bentley/index.html"),
+    read("work/eimele/index.html"),
+    read("work/chongguang-workshop/index.html"),
+    read("work/hatman/index.html"),
+    read("work/malaymalay/index.html"),
+    read("work/mirror-and-moon/index.html"),
+    read("work/index.html"),
   ]);
 
   assert.match(geely, /launch-film\.m4v/);
@@ -102,23 +117,36 @@ test("renders reviewed media without presenting Molly Tea placeholders as approv
   assert.match(malaymalay, /sizzling-plate\.jpg/);
   assert.match(mirrorAndMoon, /portfolio\/mirror-and-moon\/hero\.jpg/);
   assert.match(mirrorAndMoon, /striped-dress\.jpg/);
+  for (const name of ["Molly Tea", "Bentley", "Eimele", "Chongguang Workshop", "Hatman", "MalayMalay"]) assert.match(work, new RegExp(name));
+  assert.match(work, /Mirror &amp; Moon|Mirror & Moon/);
+  assert.match(work, /Food \+ menu/);
+  assert.match(work, /Publication clearance is pending/);
+});
+
+test("public work index lists only cleared cases and drops empty categories", { skip: includeInternal && "internal-review preview build" }, async () => {
+  const [work, home] = await Promise.all([read("work/index.html"), read("index.html")]);
+  for (const name of ["Geely", "Molly Tea", "Bentley", "Eimele", "Chongguang Workshop", "Hatman", "MalayMalay", "Mirror", "Stasis", "EMP Dairy"]) {
+    assert.doesNotMatch(work, new RegExp(name));
+    assert.doesNotMatch(home, new RegExp(name));
+  }
+  assert.doesNotMatch(work, /Food \+ menu|id="food-menu"/);
+  assert.doesNotMatch(work, /clearance is pending|internal review/i);
+  assert.equal(home.match(/class="featured-project /g)?.length, 6);
+});
+
+test("renders Spin Panda's authorised media and the shared work categories", async () => {
+  const [spinPanda, work] = await Promise.all([read("work/spin-panda/index.html"), read("work/index.html")]);
+
   assert.match(spinPanda, /portfolio\/spin-panda\/hero\.jpg/);
   assert.match(spinPanda, /portfolio\/spin-panda\/film\.mp4/);
   assert.match(spinPanda, /22 August 2026/);
   assert.match(spinPanda, /Starlink/);
   assert.match(spinPanda, /Public display authorised/);
   assert.match(spinPanda, /Central Park opening event/);
-  assert.match(work, /Molly Tea/);
-  assert.match(work, /Bentley/);
-  assert.match(work, /Eimele/);
-  assert.match(work, /Chongguang Workshop/);
-  assert.match(work, /Hatman/);
-  assert.match(work, /MalayMalay/);
-  assert.match(work, /Mirror &amp; Moon|Mirror & Moon/);
   assert.match(work, /Spin Panda/);
   assert.match(work, /Film \+ production/);
   assert.match(work, /id="photography"/);
-  assert.match(work, /Food \+ menu/);
+  assert.match(work, /href="\/work\/food-hospitality\/"/);
 });
 
 test("indexes the authorised Dr. LeWinn's film series and all selected films", async () => {
@@ -139,15 +167,15 @@ test("indexes the authorised Dr. LeWinn's film series and all selected films", a
   assert.match(home, /Dr\. LeWinn/);
 });
 
-test("renders the five locally ingested projects with their selected media and clearance state", async () => {
-  const [indiba, joLoves, mmKaraoke, nvidia, lactoferrin, work, home] = await Promise.all([
+test("renders the four authorised locally ingested projects with their selected media and clearance state", async () => {
+  const [indiba, joLoves, mmKaraoke, nvidia, food, work, home] = await Promise.all([
     readFile(new URL("../dist/client/work/indiba-icc/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/client/work/jo-loves/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/client/work/mm-karaoke/index.html", import.meta.url), "utf8"),
     readFile(new URL("../dist/client/work/nvidia/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/emp-dairy-lactoferrin/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/work/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../dist/client/index.html", import.meta.url), "utf8"),
+    read("work/food-hospitality/index.html"),
+    read("work/index.html"),
+    read("index.html"),
   ]);
 
   assert.match(indiba, /portfolio\/indiba-icc\/film\.mp4/);
@@ -170,13 +198,21 @@ test("renders the five locally ingested projects with their selected media and c
   assert.doesNotMatch(nvidia, /<video/);
   assert.match(nvidia, /NVIDIA AI Day Sydney/);
 
+  assert.match(food, /MM Karaoke/);
+
+  for (const name of ["INDIBA", "Jo Loves", "MM Karaoke", "NVIDIA"]) {
+    assert.match(work, new RegExp(name));
+    assert.match(home, new RegExp(name));
+  }
+});
+
+test("keeps EMP Dairy / Lactoferrin in internal review with its films held back", internalOnly, async () => {
+  const [lactoferrin, work, home] = await Promise.all([read("work/emp-dairy-lactoferrin/index.html"), read("work/index.html"), read("index.html")]);
+
   assert.match(lactoferrin, /portfolio\/emp-dairy-lactoferrin\/hero\.jpg/);
   assert.match(lactoferrin, /children\.jpg/);
   assert.doesNotMatch(lactoferrin, /<video/);
   assert.match(lactoferrin, /Publication and product-claim clearance pending/);
-
-  for (const name of ["INDIBA", "Jo Loves", "MM Karaoke", "NVIDIA", "EMP Dairy / Lactoferrin"]) {
-    assert.match(work, new RegExp(name.replace("/", "\\/")));
-    assert.match(home, new RegExp(name.replace("/", "\\/")));
-  }
+  assert.match(work, /EMP Dairy \/ Lactoferrin/);
+  assert.match(home, /EMP Dairy \/ Lactoferrin/);
 });
