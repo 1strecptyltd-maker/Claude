@@ -233,12 +233,16 @@ create table if not exists project_facts (
   state       fact_state not null,
   sort_order  integer not null default 0,
   source      text,                                    -- e.g. 'site.ts:channels'
-  -- "known" means renderable: non-empty and not a placeholder (same list as CaseStudyBlocks.tsx).
+  -- "known" means renderable, as known() in app/_components/CaseStudyBlocks.tsx decides: not blank
+  -- and not a placeholder (same list) once trimmed. The bracket class is exactly the whitespace JS
+  -- trim() strips; btrim() only strips spaces and \s follows the server locale (ASCII-only under C,
+  -- missing NBSP, U+3000 and the BOM). The three adjacent literals are one pattern.
   constraint facts_known_is_renderable check (
     (state = 'known'
       and value is not null
-      and btrim(value) <> ''
-      and btrim(value) !~* '^(tbc|tbd|n/a|na|unknown|pending|-|\?)$')
+      and value !~* '^[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*'
+                    '(tbc|tbd|n/a|na|unknown|pending|-|\?)?'
+                    '[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*$')
     or (state <> 'known' and value is null)
   ),
   constraint facts_project_label unique (project_id, label)
@@ -251,8 +255,14 @@ create table if not exists project_credits (
   name        text,
   state       fact_state not null,
   sort_order  integer not null default 0,
+  -- Same renderable test as project_facts.value.
   constraint credits_known_has_name check (
-    (state = 'known' and nullif(btrim(name), '') is not null) or (state <> 'known' and name is null)
+    (state = 'known'
+      and name is not null
+      and name !~* '^[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*'
+                   '(tbc|tbd|n/a|na|unknown|pending|-|\?)?'
+                   '[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*$')
+    or (state <> 'known' and name is null)
   ),
   constraint credits_project_order unique (project_id, sort_order)
 );
@@ -336,9 +346,13 @@ create table if not exists collection_projects (
 
 create table if not exists inquiries (
   id          uuid primary key default gen_random_uuid(),
-  name        text not null check (length(btrim(name)) between 1 and 200),
+  -- anon can insert directly, so the caps apply to the raw value (padding counts). "Not blank" uses
+  -- the project_facts whitespace class: some character must be outside it.
+  name        text not null check (length(name) <= 200
+                                   and name ~ '[^\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]'),
   email       text not null check (length(email) <= 320 and email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
-  message     text not null check (length(btrim(message)) between 1 and 5000),
+  message     text not null check (length(message) <= 5000
+                                   and message ~ '[^\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]'),
   status      inquiry_status not null default 'NEW',
   source      inquiry_source not null default 'website_form',
   dedupe_key  text unique check (dedupe_key is null or length(dedupe_key) between 16 and 128),
@@ -813,9 +827,14 @@ create policy blocks_anon_read on content_blocks for select to anon
 drop policy if exists project_media_anon_read on project_media;
 create policy project_media_anon_read on project_media for select to anon
   using (is_public_project(project_id));
+-- A derivative is public only while a public project places it (as media or a film poster) and it
+-- is not held in a private bucket: unplaced uploads such as rejected shots stay private even under a
+-- published project. `media_assets.id` is qualified because project_media has an id of its own.
 drop policy if exists media_anon_read on media_assets;
 create policy media_anon_read on media_assets for select to anon
-  using (class = 'derivative' and is_public_project(project_id));
+  using (class = 'derivative' and storage_bucket is null and is_public_project(project_id)
+         and exists (select 1 from project_media pm
+                     where media_assets.id in (pm.media_id, pm.poster_id) and is_public_project(pm.project_id)));
 drop policy if exists collections_anon_read on collections;
 create policy collections_anon_read on collections for select to anon using (is_public);
 drop policy if exists collection_projects_anon_read on collection_projects;

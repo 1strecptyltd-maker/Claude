@@ -15,8 +15,8 @@
 1. **默认非公开**：`projects.publication_status` 默认 `internal`。36 条迁移全部是 `internal`，公开数 = 0（ADR D7）。
 2. **公开需要证据**：`approved` / `published` 由触发器强制要求一条 `verified` 且未过期的 `public_display` 授权；`verified` 本身由 CHECK 约束强制写明 `granted_by`、`granted_on`、`evidence_location`。没有证据就不能公开，数据库层面拒绝。
 3. **不从文案推断授权**：`mediaNotice` 原文只存进 `projects.legacy_media_notice`（内部备注）。6 条「Public display authorised」只生成 `unverified_claim`，不放行。
-4. **「unknown」永不渲染**：`project_facts` / `project_credits` 用 `state`（`known` / `unknown` / `withheld`）。`known` 由 CHECK 保证非空且不是占位符（与 `CaseStudyBlocks.tsx` 同一个列表：`tbc|tbd|n/a|na|unknown|pending|-|?`）；非 `known` 的行 `value` 必须为 NULL。anon 的 RLS 和 `public_*` view 只返回 `known`。
-5. **原件不上站**：`media_assets.class = 'original'` 只能有 `source_reference`（NAS / Drive 指针），不能有 `path`；anon 只能读 `derivative`。
+4. **「unknown」永不渲染**：`project_facts` / `project_credits` 用 `state`（`known` / `unknown` / `withheld`）。`known` 行的 `value`（facts）/ `name`（credits）由 CHECK 保证与 `CaseStudyBlocks.tsx` 的 `known()` 判断一致：去掉首尾空白后非空，且不是占位符（同一个列表：`tbc|tbd|n/a|na|unknown|pending|-|?`，不分大小写）。「空白」就是 JS `trim()` 去掉的那组字符（ASCII 空白，加 NBSP、U+1680、U+2000–U+200A、U+2028、U+2029、U+202F、U+205F、U+3000、BOM），在正则里写成显式字符类：`btrim()` 只去空格，`\s` 随服务器 locale 变化（C locale 下只认 ASCII 空白），都会放过 `E'TBC\n'`、NBSP 包着的 `TBC` 这类值。非 `known` 的行 `value` / `name` 必须为 NULL。anon 的 RLS 和 `public_*` view 只返回 `known`。
+5. **原件不上站**：`media_assets.class = 'original'` 只能有 `source_reference`（NAS / Drive 指针），不能有 `path`；anon 只能读已公开案例实际用到（`project_media` 的 media 或 poster）、且不在 private bucket 的 `derivative`（§3.4）。
 6. **权限在数据库**：每张表都开 RLS；anon 只有列级 GRANT + 行级策略；私有预览只能通过 `open_preview()`。
 7. **可移植**：标准 Postgres 15+ 能跑；Supabase 专属的东西集中、可识别（§7）。
 8. **幂等**：schema 和 seed 都可以重复执行（`IF NOT EXISTS`、`ON CONFLICT DO NOTHING`、`DROP POLICY IF EXISTS` + `CREATE POLICY`、`CREATE OR REPLACE`）。
@@ -104,11 +104,11 @@ projects ─┬─< rights_clearances
 | `class` | 允许的存放 | 约束 |
 | --- | --- | --- |
 | `original` | 只有 `source_reference`（NAS / Drive 内部指针） | `path`、`storage_bucket` 必须为 NULL，`variant = 'source'` |
-| `derivative` | `path`（`portfolio/...` 逻辑路径），非公开时可选 `storage_bucket` | `path` 不以 `/` 开头、不含 `..`、必须以 `portfolio/` 开头；`variant` ≠ `source` |
+| `derivative` | `path`（`portfolio/...` 逻辑路径），非公开时可选 `storage_bucket`（有值 = 在 private bucket，anon 永远读不到） | `path` 不以 `/` 开头、不含 `..`、必须以 `portfolio/` 开头；`variant` ≠ `source` |
 
 - `variant`：`2400` / `1600` / `1200` / `800` / `thumbnail`（规范 7.3）、`web_video`、`legacy`（现有单尺寸文件）。
 - 同一个 `path` 全库唯一。导出脚本会在一个文件被两个案例共用时报错（目前没有）。
-- 公开构建（ADR D4）只复制「anon 能读到的」derivative；原件永远不会出现在 anon 结果、`open_preview()` payload 或 Web root。
+- 公开构建（ADR D4）只复制「anon 能读到的」derivative：所属案例已公开（`is_public_project()`）、`storage_bucket` 为 NULL，并且被已公开案例的 `project_media` 用作 media 或 film poster（`media_anon_read` 策略）。只登记、没放进 `project_media` 的文件（落选图、未清权的肖像帧等），放在 private bucket 里的文件，以及内部案例的文件被放到已公开案例页面上的，即使案例已发布 anon 也读不到，不会被复制进 Web root。`project_media` 行本身按案例是否公开返回，可能指向 anon 读不到的文件，渲染时跳过。原件永远不会出现在 anon 结果、`open_preview()` payload 或 Web root。
 - `project_media.usage`：`hero`、`gallery`、`film`、`block`（`block` 必须带 `block_id`）。film 的 poster 用 `poster_id`。`alt`、`title`、`caption`、`aspect_ratio`（`"3 / 2"` 格式，保持原比例）放在用法层，因为同一张图作 hero 和 poster 时 alt 可能不同。
 
 ### 3.5 `content_blocks`
@@ -124,7 +124,7 @@ projects ─┬─< rights_clearances
 
 ### 3.7 `inquiries` / `inquiry_events` / `inquiry_reply_drafts`
 
-- `inquiries`：`name`（1–200）、`email`（≤320，基本格式校验）、`message`（1–5000）、`status` 默认 `NEW`、`source` 默认 `website_form`、`dedupe_key`（API 生成的去重键，16–128 字符，唯一）。
+- `inquiries`：`name`（≤200）、`email`（≤320，基本格式校验，不允许 ASCII 空白）、`message`（≤5000）。长度都按**原始值**算：anon 可以不经 API 直接经 PostgREST INSERT，用空白填充也写不进超长内容。`name` / `message` 还必须至少有一个非空白字符（「空白」同原则 4），只有空白算空。`status` 默认 `NEW`、`source` 默认 `website_form`、`dedupe_key`（API 生成的去重键，16–128 字符，唯一）。
 - 状态 enum：`NEW`、`IN_PROGRESS`、`REPLIED`、`WON`、`LOST`、`SPAM`、`ARCHIVED`。除 `NEW`（规范 6.2）外都是提议，U9 可以用 `ALTER TYPE ... ADD VALUE IF NOT EXISTS` 扩展。
 - `inquiry_reply_drafts.generated_by` 是 `ai` 或 `human`；CHECK `drafts_sent_by_human`：`sent_at` 有值时 `sent_by`（admin 用户）必填。数据库没有「AI 发信」这条路径（规范 6.4）。
 - 审计：这两张表的 audit 只记 action 和 row id，不复制姓名 / 邮箱 / 留言（ADR D5 日志不泄露个人信息）。
@@ -227,7 +227,7 @@ clearance_status:
 | `rights_clearances` | 无权限 | 无行 | 只读 | 读写 | 全部 |
 | `project_facts` / `project_credits` | 仅已发布案例的 `known` 行 | 无行 | 读写 | 读写 | 全部 |
 | `content_blocks` / `project_media` | 仅已发布案例 | 无行 | 读写 | 读写 | 全部 |
-| `media_assets` | 仅已发布案例的 `derivative`；无 `source_reference` / `storage_bucket` 列 | 无行 | 读写 | 读写 | 全部 |
+| `media_assets` | 仅已发布案例**实际引用**（`project_media` 的 media / poster）且 `storage_bucket` 为 NULL 的 `derivative`；无 `source_reference` / `storage_bucket` 列 | 无行 | 读写 | 读写 | 全部 |
 | `collections` / `collection_projects` | 仅 `is_public` 集合 × 已发布案例 | 无行 | 读写 | 读写 | 全部 |
 | `inquiries` | **只 INSERT**（name、email、message、dedupe_key 列）；策略要求 `status = 'NEW'`；不能 SELECT，因此也不能 `RETURNING` | 无行 | 无行 | 读写 | 全部 |
 | `inquiry_events` / `inquiry_reply_drafts` | 无权限 | 无行 | 无行 | 读写 | 全部 |
@@ -281,8 +281,10 @@ clearance_status:
 - schema 连续执行两次成功；17 张表全部开启 RLS。
 - seed 连续执行两次，各表行数不变；36 条全部 `internal`、`published_at` 为空；6 条授权全部 `unverified_claim`；没有 original 媒体；Spin Panda 为 10 个 block，facts / credits 的 `items` 不在 `props`，`Results` 为 `unknown`。
 - 约束：无证据的 `verified`、直接插入 `published`、未授权就发布、`TBC` 作为 known fact、unknown 带值、无名 known credit、带 path 的 original、绝对路径 / `..` 路径、inline facts、无 slug 的 `next`、非法邮箱 / 空姓名、未标人工就「已发送」的草稿、过期时间早于创建时间、修改 / 删除 `audit_log`——全部被拒绝。
+- known 值与 `known()` 一致：`E'TBC\n'`、`E'\tTBC'`、只有换行、NBSP / U+3000 / BOM 包着的占位符或空白作为 known fact，`TBC`、`E'n/a\n'`、只有 NBSP 的 known credit，全部被拒绝；`E' 2025\n'`、`Pending approval`、`N/A Studio` 这类 `known()` 会显示的值仍可写入。
 - anon：发布前读到 0 行；发布 2 条（测试用 fixture 证据）后只看到这 2 条；读内部列、`SELECT *`、授权表、admin / audit / preview / CRM 表、UPDATE 都 permission denied；facts 只有 known，媒体只有 derivative，`next → 非公开案例` 被 view 去掉；私有集合不可见。
-- 询盘：anon 能 INSERT，不能 SELECT、不能 `RETURNING`、不能设 `status`、不能 UPDATE；落库状态 `NEW`；审计不含个人信息。
+- 媒体：已发布案例下只登记没放置的、放在 private bucket 的（包括已放置的）derivative，以及内部案例放到已发布案例页面上的 derivative，anon 都读不到；只作 film poster 的能读到；anon 能读到的每个文件都被 `project_media` 引用。
+- 询盘：anon 能 INSERT，不能 SELECT、不能 `RETURNING`、不能设 `status`、不能 UPDATE；落库状态 `NEW`；审计不含个人信息。用空白把 name 填到 201 字符、message 填到 5001 字符、email 末尾加空白，以及只有空白的 name / message，都被拒绝；恰好 200 / 5000 / 320 字符可以写入。
 - authenticated：非 admin 看到 0 行；editor 能改文案、不能撤回 / 发布、不能写授权、看不到询盘和审计；owner 能看到询盘；审计记录了 editor 的 `actor` 和 `db_role = authenticated`。
 - 预览：editor 不能建链接；owner 建的链接默认 7 天；明文 token 不出现在审计里；anon 不能读 `preview_links`；有效 token 只返回该链接范围内的案例，payload 里无 `legacy_media_notice`；错误 / 未知 token、撤销后、过期后都返回 0 行；访问统计按 granted / revoked / expired 记录。
 - 授权撤销后，已发布案例自动变为 `withdrawn`，anon 不再看到。
