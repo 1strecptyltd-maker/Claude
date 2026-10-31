@@ -34,7 +34,7 @@ export type CaseStudy = {
   }>;
 };
 
-export const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@cheese.studio";
+export const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "info@firstrec.com.au";
 
 export const caseStudies: CaseStudy[] = [
   {

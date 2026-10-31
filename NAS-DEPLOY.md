@@ -39,7 +39,7 @@ The production container is Nginx serving only the exported static files. It res
 
 ## Current TrueNAS SCALE deployment
 
-- Public URL: `https://www.firstrec.work`
+- Public URL: `https://www.firstrec.work` (target canonical domain is `www.firstrec.com.au`; keep building with `.work` until `.com.au` serves the site directly instead of a frameset — see `docs/DECISIONS.md`)
 - Reverse-proxy target: `http://192.168.74.200:30040`
 - Container port mapping: `30040:80`
 - Compose file: `compose.truenas.yaml`
@@ -48,7 +48,7 @@ The production container is Nginx serving only the exported static files. It res
 Build and test locally with the production URL before uploading the static export:
 
 ```sh
-NEXT_PUBLIC_SITE_URL=https://www.firstrec.work npm test
+NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm test
 ```
 
 After replacing `dist/client/` on the NAS, apply the deployment from the NAS directory:

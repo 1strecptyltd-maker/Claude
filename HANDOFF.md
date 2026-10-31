@@ -85,7 +85,7 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d
 - **发布状态**：只有 6 个案例标了公开授权（Spin Panda、Dr. LeWinn's、INDIBA、Jo Loves、MM Karaoke、NVIDIA），其余 30 个是"内部审核 / 待确认"，但首页仍全量列出 36 个
 - 早期路由用 `caseStudies[n]` 数组下标取数，重排数组会让旧 URL 显示错的案例 → 改成按 slug 取
 - 首页 6–8 个精选、排序、餐饮合并策略
-- 生产配置收口：最终域名（`.com.au` canonical + `.work` 301）、联系邮箱（线上仍是 `hello@cheese.studio`）
+- 生产配置收口：最终域名已定为 `firstrec.com.au`，但 DNS 尚未统一，切换前仍按 `www.firstrec.work` 构建；联系邮箱已定为 `info@firstrec.com.au`（线上旧版仍是 `hello@cheese.studio`，下次部署后替换）。见 `docs/DECISIONS.md`
 - V2（规范 v0.2，原文在 Mac 上的 Codex 目录，未入库）：自托管 Supabase、Admin/CMS、CRM 询盘表单、私有预览链接、媒体管线、模块化案例 blocks、切域——**都还没开始**
 - 未做：逐页浏览器视觉 QA、Docker 实测、Node 22 实测、NAS/Cloudflare/GoDaddy 后台配置核实
 
@@ -98,7 +98,7 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d
 | 变量 | 用处 | 缺省值 |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | `app/layout.tsx` 的 `metadataBase`（OG/canonical） | `http://localhost:3000` |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | `app/_data/site.ts` 的 `contactEmail` | `hello@cheese.studio` |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | `app/_data/site.ts` 的 `contactEmail` | `info@firstrec.com.au`（2026-10-31 创始人确认，见 `docs/DECISIONS.md`） |
 
 工具变量（非密钥，一般不用设）：`CODEX_SANDBOX`、`WRANGLER_LOG_PATH`、`WRANGLER_WRITE_LOGS`、`MINIFLARE_REGISTRY_PATH`。
 
