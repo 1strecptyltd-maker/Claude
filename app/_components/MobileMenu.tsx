@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { navigation, type NavHref } from "./SiteHeader";
+import { navigation, type NavHref } from "../_data/navigation";
 
 export function MobileMenu({ current }: { current?: NavHref }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);

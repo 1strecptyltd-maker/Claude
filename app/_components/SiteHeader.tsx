@@ -1,15 +1,6 @@
 import Image from "next/image";
+import { navigation, type NavHref } from "../_data/navigation";
 import { MobileMenu } from "./MobileMenu";
-
-export const navigation = [
-  ["Work", "/work/"],
-  ["Services", "/services/"],
-  ["About", "/about/"],
-  ["Equipment", "/equipment/"],
-  ["Contact", "/contact/"],
-] as const;
-
-export type NavHref = (typeof navigation)[number][1];
 
 export function SiteHeader({ current }: { current?: NavHref }) {
   return (

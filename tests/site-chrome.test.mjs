@@ -4,6 +4,9 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
 
+// Only the rendered page body; the RSC payload embedded in the HTML repeats the raw data.
+const body = (html) => html.replace(/<script\b[\s\S]*?<\/script>/g, "");
+
 test("each section page marks exactly its own link as current in both navs", async () => {
   const pages = [
     ["work/index.html", "/work/"],
@@ -16,14 +19,14 @@ test("each section page marks exactly its own link as current in both navs", asy
   ];
   for (const [path, href] of pages) {
     const html = await read(path);
-    const currentLinks = [...html.matchAll(/<a\b[^>]*>/g)].map((match) => match[0]).filter((tag) => tag.includes('aria-current="page"'));
+    const currentLinks = [...body(html).matchAll(/<a\b[^>]*>/g)].map((match) => match[0]).filter((tag) => tag.includes('aria-current="page"'));
     assert.equal(currentLinks.length, 2, `${path}: desktop + mobile nav each mark the current page`);
     for (const tag of currentLinks) {
       assert.ok(tag.includes(`href="${href}"`), `${path}: aria-current link points at ${href}`);
     }
   }
   const home = await read("index.html");
-  assert.doesNotMatch(home, /aria-current/);
+  assert.doesNotMatch(body(home), /aria-current=/);
 });
 
 test("the phone menu summary carries both its closed and open labels", async () => {
