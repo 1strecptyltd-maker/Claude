@@ -63,7 +63,8 @@ test("legacy cases without blocks still render the fixed template", async () => 
     assert.match(html, /class="case-facts"/);
     assert.match(html, /class="case-story"/);
     assert.match(html, /01 \/ Context/);
-    assert.doesNotMatch(html, /case-block-/);
+    assert.doesNotMatch(html, /case-block-(?!next)/);
+    assert.match(html, /class="case-block-next"/);
   }
 });
 

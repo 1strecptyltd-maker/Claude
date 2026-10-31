@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { isListed } from "../_data/publication";
 import { reviewNotice } from "../_data/review-notice";
 import { caseStudies, type CaseStudy } from "../_data/site";
@@ -45,11 +46,11 @@ export function FilmVideo({ film }: { film: CaseFilm }) {
   );
 }
 
-function HeroBlock({ block, project, number }: { block: Extract<CaseStudyBlock, { type: "hero" }>; project: CaseStudy; number: string }) {
+function HeroBlock({ block, project }: { block: Extract<CaseStudyBlock, { type: "hero" }>; project: CaseStudy }) {
   const summary = block.summary ?? project.summary;
   return (
     <header className="case-hero">
-      <div><p className="eyebrow">{block.eyebrow ?? `${number} / ${project.category}`}</p><h1>{block.title ?? project.client}</h1></div>
+      <div><p className="eyebrow">{block.eyebrow ?? project.category}</p><h1>{block.title ?? project.client}</h1></div>
       {known(summary) ? <p>{summary}</p> : null}
     </header>
   );
@@ -115,14 +116,14 @@ function VideoBlock({ block, project, id }: { block: Extract<CaseStudyBlock, { t
   return (
     <section className="case-film" aria-labelledby={id}>
       <div className="case-film-heading">
-        <p className="eyebrow">{block.eyebrow ?? "Selected film"}</p>
+        <p className="eyebrow">{block.eyebrow ?? (films.length > 1 ? "Selected films" : "Selected film")}</p>
         <h2 id={id}>{block.heading ?? "The project in motion."}</h2>
         {known(note) ? <p>{note}</p> : null}
       </div>
       <div className={`case-film-list${films.length > 1 ? " case-film-list--multiple" : ""}`}>
         {films.map((film, index) => (
           <figure className="case-film-item" key={film.src}>
-            {films.length > 1 ? <figcaption><span>{String(index + 1).padStart(2, "0")} / Film</span><strong>{film.title}</strong></figcaption> : null}
+            <figcaption>{films.length > 1 ? <span>{String(index + 1).padStart(2, "0")} / Film</span> : null}<strong>{film.title}</strong></figcaption>
             <FilmVideo film={film} />
           </figure>
         ))}
@@ -137,7 +138,7 @@ function GalleryBlock({ block, project }: { block: Extract<CaseStudyBlock, { typ
   return (
     <section className="case-gallery" aria-label={block.label ?? `${project.client} selected images`}>
       {images.map((asset) => (
-        <figure key={asset.image} style={asset.ratio ? { aspectRatio: asset.ratio } : undefined}>
+        <figure key={asset.image} style={{ "--r": asset.ratio ?? "3 / 2" } as CSSProperties}>
           <Image src={asset.image} alt={asset.alt} fill sizes="(max-width: 767px) 100vw, 60vw" style={{ objectFit: "contain", background: "var(--paper)" }} />
         </figure>
       ))}
@@ -190,7 +191,7 @@ function BtsBlock({ block, id }: { block: Extract<CaseStudyBlock, { type: "bts" 
   );
 }
 
-function NextBlock({ block }: { block: Extract<CaseStudyBlock, { type: "next" }> }) {
+export function NextBlock({ block }: { block: Extract<CaseStudyBlock, { type: "next" }> }) {
   // Only link to a case this build exports; an internal-review target has no page in a public build.
   const next = caseStudies.find((item) => item.slug === block.slug);
   if (!next || !isListed(next.slug)) return null;
@@ -202,7 +203,7 @@ function NextBlock({ block }: { block: Extract<CaseStudyBlock, { type: "next" }>
   );
 }
 
-export function CaseStudyBlocks({ project, number, blocks }: { project: CaseStudy; number: string; blocks: CaseStudyBlock[] }) {
+export function CaseStudyBlocks({ project, blocks }: { project: CaseStudy; blocks: CaseStudyBlock[] }) {
   const firstImage = blocks.findIndex((block) => block.type === "fullImage");
   return (
     <>
@@ -210,7 +211,7 @@ export function CaseStudyBlocks({ project, number, blocks }: { project: CaseStud
         const key = `${block.type}-${index}`;
         const id = `${project.slug}-${key}`;
         switch (block.type) {
-          case "hero": return <HeroBlock key={key} block={block} project={project} number={number} />;
+          case "hero": return <HeroBlock key={key} block={block} project={project} />;
           case "intro": return <IntroBlock key={key} block={block} />;
           case "facts": return <FactsBlock key={key} block={block} />;
           case "gallery": return <GalleryBlock key={key} block={block} project={project} />;
