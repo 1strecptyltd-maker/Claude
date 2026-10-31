@@ -9,6 +9,7 @@ import { PLACEHOLDER_MARKER } from "./placeholder-marker.mjs";
 // Development stand-ins for portfolio media that is not in Git (HANDOFF.md section 6). Real files are copied in on
 // the NAS before a release. Every placeholder carries PLACEHOLDER_MARKER so check-public-build.mjs can refuse to
 // publish one. Existing files are never overwritten; `--clean` removes only files that carry the marker.
+// When ffmpeg has no drawtext filter the placeholder video is a plain frame with no label, still carrying the marker.
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const imageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
@@ -48,13 +49,33 @@ async function writeImage(target, media, [w, h]) {
     .toFile(target);
 }
 
+export function placeholderVideoFilter(text, { drawtext }) {
+  return drawtext
+    ? `drawtext=text='${text}':fontcolor=0x5b5248:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/2`
+    : `drawbox=x=24:y=24:w=iw-48:h=ih-48:color=0x5b5248@0.25:t=2`;
+}
+
+let drawtextSupport;
+
+export function ffmpegHasDrawtext() {
+  if (drawtextSupport === undefined) {
+    try {
+      const filters = execFileSync("ffmpeg", ["-hide_banner", "-filters"], { encoding: "utf8" });
+      drawtextSupport = /^\s*\S+\s+drawtext\s/m.test(filters);
+    } catch {
+      drawtextSupport = false;
+    }
+  }
+  return drawtextSupport;
+}
+
 function writeVideo(target, media) {
   const { title, file } = label(media);
   const text = `PLACEHOLDER  ${title} / ${file}`.replace(/[':\\]/g, " ");
   execFileSync("ffmpeg", [
     "-hide_banner", "-loglevel", "error", "-y",
     "-f", "lavfi", "-i", `color=c=0xe9dfcf:s=1280x720:d=4:r=24`,
-    "-vf", `drawtext=text='${text}':fontcolor=0x5b5248:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/2`,
+    "-vf", placeholderVideoFilter(text, { drawtext: ffmpegHasDrawtext() }),
     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
     "-metadata", `comment=${PLACEHOLDER_MARKER}`,
     target,

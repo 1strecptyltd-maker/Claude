@@ -6,7 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import sharp from "sharp";
 import { checkPublicBuild, parseArgs } from "../scripts/check-public-build.mjs";
-import { cleanPlaceholders, generatePlaceholders } from "../scripts/generate-placeholder-media.mjs";
+import { cleanPlaceholders, generatePlaceholders, placeholderVideoFilter } from "../scripts/generate-placeholder-media.mjs";
 import { PLACEHOLDER_MARKER } from "../scripts/placeholder-marker.mjs";
 
 const hasFfmpeg = (() => {
@@ -62,6 +62,16 @@ test("generates marked placeholders at the data's aspect ratio without touching 
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("placeholderVideoFilter falls back to a drawbox filter when drawtext is unavailable", () => {
+  const withText = placeholderVideoFilter("PLACEHOLDER DEMO / hero", { drawtext: true });
+  assert.ok(withText.startsWith("drawtext=text='"));
+  assert.ok(withText.includes("PLACEHOLDER DEMO / hero"));
+
+  const withoutText = placeholderVideoFilter("PLACEHOLDER DEMO / hero", { drawtext: false });
+  assert.ok(withoutText.startsWith("drawbox="));
+  assert.ok(!withoutText.includes("drawtext"));
 });
 
 test("the public build check refuses placeholder media unless explicitly allowed", async () => {
