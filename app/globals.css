@@ -306,7 +306,7 @@ footer p { margin: 0; color: var(--muted); font-size: .68rem; letter-spacing: .0
   .menu-label-open { display: none; }
   .mobile-menu[open] .menu-label-closed { display: none; }
   .mobile-menu[open] .menu-label-open { display: inline; }
-  .mobile-menu nav { position: absolute; top: 100%; left: 0; right: 0; width: auto; padding: 1rem var(--page-x) 2rem; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: 0 12px 24px rgba(36, 37, 31, .08); font-size: 1.05rem; }
+  .mobile-menu nav { display: grid; position: absolute; top: 100%; left: 0; right: 0; width: auto; padding: 1rem var(--page-x) 2rem; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: 0 12px 24px rgba(36, 37, 31, .08); font-size: 1.05rem; }
   .mobile-menu nav a { min-height: 44px; display: flex; align-items: center; }
   .mobile-menu nav a:not(:last-child) { border-bottom: 1px solid var(--line); }
   /* Underline moves from border to text-decoration so the padded box can reach 44px. */
