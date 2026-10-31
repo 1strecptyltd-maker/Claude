@@ -47,6 +47,21 @@ const leakPatterns = [
   { label: "Google Drive folder ID", pattern: /(?<![A-Za-z0-9_-])(?:1[A-Za-z0-9_-]{32}|0B[A-Za-z0-9_-]{26})(?![A-Za-z0-9_-])/g },
 ];
 
+// Internal review notes that must not reach visitors: phrases written into case copy while an edit awaits
+// confirmation or clearance. Always errors; there is no --allow- flag for them.
+export const internalWordingPatterns = [
+  { label: "public display authorised", pattern: /public[- ]display[- ]authori[sz]ed/gi },
+  { label: "publicly authorised", pattern: /publicly authori[sz]ed/gi },
+  { label: "publication clearance", pattern: /publication (?:clearance|permissions?)/gi },
+  { label: "remains to be confirmed / unconfirmed", pattern: /\bremains? (?:to be confirmed|unconfirmed)\b/gi },
+  { label: "credits to confirm", pattern: /\b(?:public )?credits (?:to confirm|remain|left unclaimed)\b/gi },
+  { label: "left unclaimed", pattern: /\bleft unclaimed\b/gi },
+  { label: "review-ready", pattern: /\breview-ready\b/gi },
+  { label: "internal review", pattern: /\binternal review\b/gi },
+  { label: "approved Drive folder", pattern: /\bapproved drive folder\b/gi },
+  { label: "supplied / source archive", pattern: /\b(?:supplied|source)(?: [a-z]+){0,2} archive\b/gi },
+];
+
 export function parseArgs(argv) {
   const options = { exportDir: path.join(projectRoot, "dist", "client"), appDir: path.join(projectRoot, "app"), allowMissingMedia: null, allowDefaultEmail: false, allowPlaceholders: false, siteOrigins: productionSiteOrigins, contactEmail: expectedContactEmail };
   for (const arg of argv) {
@@ -236,6 +251,13 @@ export async function checkPublicBuild(options) {
 
     for (const { label, pattern } of leakPatterns) {
       for (const match of text.matchAll(pattern)) hit("internal-leak", match.index, `${label}: ${match[0]}`);
+    }
+
+    // Visitor-facing copy only: JS/CSS/JSON/SVG may legitimately contain these words in identifiers or data.
+    if (file.endsWith(".html") || file.endsWith(".rsc")) {
+      for (const { label, pattern } of internalWordingPatterns) {
+        for (const match of text.matchAll(pattern)) hit("internal-wording", match.index, `${label}: ${match[0]}`);
+      }
     }
 
     for (const { category, line, detail, count } of hits.values()) add(errors, category, `${file}:${line}`, count > 1 ? `${detail} (${count}x)` : detail);

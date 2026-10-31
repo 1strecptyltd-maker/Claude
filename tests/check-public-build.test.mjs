@@ -6,7 +6,7 @@ import path from "node:path";
 import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { checkPublicBuild, knownMissingMedia, parseArgs } from "../scripts/check-public-build.mjs";
+import { checkPublicBuild, internalWordingPatterns, knownMissingMedia, parseArgs } from "../scripts/check-public-build.mjs";
 
 const script = fileURLToPath(new URL("../scripts/check-public-build.mjs", import.meta.url));
 const run = promisify(execFile);
@@ -126,6 +126,49 @@ test("fails on internal index routes and Google Drive leaks", async (t) => {
   assert.match(details, /Google Drive URL/);
   assert.match(details, /Google Drive folder ID: 1AbCdEfGhIjKlMnOpQrStUvWxYz012345/);
   assert.match(details, /Google Docs URL/);
+});
+
+test("fails on internal review wording in case HTML and RSC payloads", async (t) => {
+  const root = await fixture(t, {
+    "work/case/index.html": page("<p>A public-display-authorised edit, while public credits remain unconfirmed.</p>"),
+    "work/case.rsc": `0:{"children":"A review-ready image set for discussion."}`,
+  });
+  const { errors } = await check(root);
+  const wording = errors.filter((item) => item.category === "internal-wording");
+  assert.ok(wording.some((item) => item.file.startsWith("work/case/index.html:")));
+  assert.ok(wording.some((item) => item.file.startsWith("work/case.rsc:")));
+  const details = wording.map((item) => item.detail).join("\n");
+  assert.match(details, /public display authorised: public-display-authorised/);
+  assert.match(details, /remains to be confirmed \/ unconfirmed: remain unconfirmed/);
+  assert.match(details, /review-ready: review-ready/);
+});
+
+test("scans only HTML and RSC for internal review wording, not JS or CSS", async (t) => {
+  const root = await fixture(t, {
+    "_next/static/chunks/app.js": "const copy='A review-ready image set for discussion.';",
+    "_next/static/css/site.css": "/* A review-ready image set for discussion. */",
+  });
+  const { errors } = await check(root);
+  assert.ok(!errors.some((item) => item.category === "internal-wording"));
+});
+
+test("accepts legitimate copy that only resembles internal review wording", async (t) => {
+  const root = await fixture(t, {
+    "work/case/index.html": page("<p>Credits: First Rec.</p><p>We confirmed the venue</p><p>an archive of the opening night</p><p>authorised retailer</p>"),
+  });
+  const { errors } = await check(root);
+  assert.ok(!errors.some((item) => item.category === "internal-wording"));
+});
+
+test("exports internalWordingPatterns with a label and a global regex per entry", () => {
+  assert.ok(Array.isArray(internalWordingPatterns));
+  assert.ok(internalWordingPatterns.length >= 10);
+  for (const { label, pattern } of internalWordingPatterns) {
+    assert.equal(typeof label, "string");
+    assert.ok(pattern instanceof RegExp);
+    assert.ok(pattern.global, `${label} pattern must be global`);
+    assert.ok(pattern.ignoreCase, `${label} pattern must be case-insensitive`);
+  }
 });
 
 test("lists every missing local reference and downgrades known media with --allow-missing-media", async (t) => {
