@@ -55,7 +55,7 @@ test("omits unknown or empty facts instead of rendering empty labels", async () 
 });
 
 test("legacy cases without blocks still render the fixed template", async () => {
-  for (const slug of ["nvidia", "dr-lewinn", "geely-australia"]) {
+  for (const slug of ["nvidia", "dr-lewinn", "jo-loves"]) {
     const html = body(await read(`work/${slug}/index.html`));
     assert.match(html, /class="case-hero"/);
     assert.match(html, /class="case-lead-image"/);
