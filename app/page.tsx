@@ -33,7 +33,7 @@ export default function Home() {
       <section className="proof" aria-label="Studio credentials">
         <div><strong>5+ years</strong><span>Production experience</span></div>
         <div><strong>Sydney</strong><span>Australia-wide travel</span></div>
-        <div><strong>English + Mandarin</strong><span>Bilingual production</span></div>
+        <div><strong>English&nbsp;+ Mandarin</strong><span>Bilingual production</span></div>
         <div><strong>Flexible crew</strong><span>Built around each brief</span></div>
       </section>
 

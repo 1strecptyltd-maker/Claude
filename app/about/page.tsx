@@ -8,7 +8,7 @@ export const dynamic = "force-static";
 
 export default function AboutPage() {
   return (
-    <PageShell>
+    <PageShell current="/about/">
       <header className="about-hero">
         <div className="about-mark" aria-hidden="true"><Image src="/brand/first-rec/icon.svg" alt="" width={400} height={400} /></div>
         <div>
@@ -27,7 +27,7 @@ export default function AboutPage() {
       </section>
       <section className="about-facts" aria-label="Studio facts">
         <article><span>Based in</span><h2>Sydney</h2><p>Available for productions across Australia.</p></article>
-        <article><span>Working in</span><h2>English + Mandarin</h2><p>Bilingual communication across planning and production.</p></article>
+        <article><span>Working in</span><h2>English&nbsp;+ Mandarin</h2><p>Bilingual communication across planning and production.</p></article>
         <article><span>Founder</span><h2>Cheese</h2><p>One clear point of contact across planning and production.</p></article>
       </section>
       <ContactBand />

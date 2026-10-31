@@ -17,7 +17,7 @@ const hasInternalReview = projects.some((project) => !isPublic(project.slug));
 // empty. It renders an honest empty state instead, and /work/ stops linking to it.
 export default function FoodHospitalityPage() {
   return (
-    <PageShell>
+    <PageShell current="/work/">
       <header className="page-hero page-hero--work">
         <p className="eyebrow">Food + hospitality</p>
         <h1>Made to be<br />looked at hungry.</h1>

@@ -8,7 +8,7 @@ import type { CaseStudy } from "../_data/site";
 export function CaseStudyPage({ project, number }: { project: CaseStudy; number: string }) {
   if (project.blocks?.length) {
     return (
-      <PageShell>
+      <PageShell current="/work/">
         <CaseStudyBlocks project={project} number={number} blocks={project.blocks} />
         <nav className="case-back" aria-label="Work navigation"><a className="text-link" href="/work/">Back to all work</a></nav>
         <ContactBand />
@@ -20,7 +20,7 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
   const notice = reviewNotice(project);
 
   return (
-    <PageShell>
+    <PageShell current="/work/">
       <header className="case-hero">
         <div><p className="eyebrow">{number} / {project.category}</p><h1>{project.client}</h1></div>
         <p>{project.summary}</p>

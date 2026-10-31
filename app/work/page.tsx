@@ -37,7 +37,7 @@ const hasFoodCollection = caseStudies.some((project) => project.discipline === "
 
 export default function WorkPage() {
   return (
-    <PageShell>
+    <PageShell current="/work/">
       <header className="page-hero page-hero--work">
         <p className="eyebrow">Selected work</p>
         <h1>Built for the moment.<br />Useful after it.</h1>
