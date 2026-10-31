@@ -1,9 +1,20 @@
 import Image from "next/image";
+import { CaseStudyBlocks } from "./CaseStudyBlocks";
 import { ContactBand } from "./ContactBand";
 import { PageShell } from "./PageShell";
 import type { CaseStudy } from "../_data/site";
 
 export function CaseStudyPage({ project, number }: { project: CaseStudy; number: string }) {
+  if (project.blocks?.length) {
+    return (
+      <PageShell>
+        <CaseStudyBlocks project={project} number={number} blocks={project.blocks} />
+        <nav className="case-back" aria-label="Work navigation"><a className="text-link" href="/work/">Back to all work</a></nav>
+        <ContactBand />
+      </PageShell>
+    );
+  }
+
   const films = project.films ?? (project.film ? [project.film] : []);
 
   return (
