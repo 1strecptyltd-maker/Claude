@@ -1,13 +1,13 @@
 import Image from "next/image";
 import { ContactBand } from "./_components/ContactBand";
 import { PageShell } from "./_components/PageShell";
-import { heroCaseStudy, listedCaseStudies } from "./_data/publication";
+import { featuredCaseStudies, heroCaseStudy } from "./_data/publication";
 import { services } from "./_data/site";
 
 export const dynamic = "force-static";
 
 const heroProject = heroCaseStudy();
-const projects = listedCaseStudies();
+const projects = featuredCaseStudies();
 
 export default function Home() {
   return (

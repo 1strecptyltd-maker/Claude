@@ -103,3 +103,13 @@ test("home hero uses a public case", async () => {
   assert.ok(hero, `hero image ${heroImage} does not belong to a case study`);
   assert.equal(records.get(hero.slug), "public", `hero uses ${hero.slug}`);
 });
+
+test("featured cases are public, flagged provisional until the founder chooses, and never padded", async () => {
+  const source = await readFile(join(root, "app/_data/publication.ts"), "utf8");
+  assert.match(source, /featured: status === "public"/);
+  assert.match(source, /featuredProvisional: status === "public"/);
+  const records = await publicationRecords();
+  const publicCount = [...records.values()].filter((status) => status === "public").length;
+  const home = await readFile(join(dist, "index.html"), "utf8");
+  assert.equal(home.match(/class="featured-project /g)?.length, publicCount);
+});

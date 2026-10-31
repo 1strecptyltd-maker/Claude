@@ -208,11 +208,12 @@ test("renders the four authorised locally ingested projects with their selected 
 
 test("keeps EMP Dairy / Lactoferrin in internal review with its films held back", internalOnly, async () => {
   const [lactoferrin, work, home] = await Promise.all([read("work/emp-dairy-lactoferrin/index.html"), read("work/index.html"), read("index.html")]);
+  // The home page shows featured public cases only, even in the internal-review preview.
 
   assert.match(lactoferrin, /portfolio\/emp-dairy-lactoferrin\/hero\.jpg/);
   assert.match(lactoferrin, /children\.jpg/);
   assert.doesNotMatch(lactoferrin, /<video/);
   assert.match(lactoferrin, /Publication and product-claim clearance pending/);
   assert.match(work, /EMP Dairy \/ Lactoferrin/);
-  assert.match(home, /EMP Dairy \/ Lactoferrin/);
+  assert.doesNotMatch(home, /EMP Dairy/);
 });

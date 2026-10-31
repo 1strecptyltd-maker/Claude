@@ -6,13 +6,23 @@ export type PublicationRecord = {
   status: PublicationStatus;
   /** Where the status comes from. `mediaNotice` copy is never treated as evidence on its own. */
   evidence: string;
-  /** Founder decision (U4). Unset until a public selection is confirmed. */
+  /** Founder decision (U4). Shown in the home page selection. */
   featured: boolean;
+  /** True while `featured` is a placeholder rather than the founder's choice. */
+  featuredProvisional: boolean;
   /** Founder decision (U4). `null` falls back to the order of `caseStudies` in site.ts. */
   order: number | null;
 };
 
-const record = (status: PublicationStatus, evidence: string): PublicationRecord => ({ status, evidence, featured: false, order: null });
+// Placeholder until the founder picks 6-8 featured cases (docs/DECISIONS.md, 2026-10-31): every public case is
+// featured in its current order and flagged provisional. With fewer than 6 public cases, show only those; never pad.
+const record = (status: PublicationStatus, evidence: string): PublicationRecord => ({
+  status,
+  evidence,
+  featured: status === "public",
+  featuredProvisional: status === "public",
+  order: null,
+});
 
 const AUDIT = "docs/HANDOFF-2026-10-17-CLAUDE.md section 5";
 const SUMMARY = "HANDOFF.md sections 4 and 6";
@@ -93,6 +103,11 @@ export function publicCaseStudies(): CaseStudy[] {
 /** Case studies this build may render, in display order. */
 export function listedCaseStudies(): CaseStudy[] {
   return caseStudies.filter((project) => isListed(project.slug)).sort(byPublicationOrder);
+}
+
+/** Home page selection: featured public cases in display order. */
+export function featuredCaseStudies(): CaseStudy[] {
+  return publicCaseStudies().filter((project) => getPublication(project.slug).featured);
 }
 
 /** Hero project: a featured public case if one is set, otherwise the first public case in display order. */
