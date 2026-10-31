@@ -52,6 +52,9 @@ test("nginx serves the branded 404 and both deploy paths use that config", async
   const [conf, compose, dockerfile] = await Promise.all(["deploy/nginx.conf", "compose.truenas.yaml", "Dockerfile"].map((path) => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
   assert.match(conf, /try_files \$uri \$uri\/ =404;/);
   assert.match(conf, /error_page 404 \/404\.html;/);
+  // Folders without index.html would otherwise get nginx's stock 403 page with its version banner.
+  assert.match(conf, /error_page 403 =404 \/404\.html;/);
+  assert.match(conf, /server_tokens off;/);
   assert.match(compose, /\.\/deploy\/nginx\.conf:\/etc\/nginx\/conf\.d\/default\.conf:ro/);
   assert.match(dockerfile, /COPY deploy\/nginx\.conf \/etc\/nginx\/conf\.d\/default\.conf/);
 });

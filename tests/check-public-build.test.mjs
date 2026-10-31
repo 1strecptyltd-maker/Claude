@@ -212,6 +212,21 @@ test("checks same-origin absolute and protocol-relative URLs, og:image and twitt
   assert.ok(!narrowed.errors.some((item) => item.file === "/work/gone/"), "only the expected origins count as local");
 });
 
+test("checks twitter:image and canonical on their own, downgrades meta files with --allow-missing-media, and survives malformed escapes", async (t) => {
+  const head = `<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta property="og:image" content="https://www.firstrec.work/og.png"/>`
+    + `<meta name="twitter:image" content="https://www.firstrec.work/twitter.png"/><link rel="canonical" href="https://www.firstrec.work/gone/"/></head>`;
+  const root = await fixture(t, {
+    "about/index.html": `${head}<body><a href="mailto:info@firstrec.com.au">Email</a><a href="https://www.firstrec.work/50%off/">Sale</a><a href="/50%off/">Sale</a></body></html>`,
+  });
+  const missing = (await check(root)).errors.filter((item) => item.category === "missing-file");
+  assert.deepEqual(missing.map((item) => item.file).sort(), ["/50%off/", "/gone/", "/twitter.png"]);
+  assert.match(missing.find((item) => item.file === "/twitter.png").detail, /^twitter:image referenced by 1 file\(s\)/);
+
+  const preview = await check(root, { allowMissingMedia: ["/twitter.png"] });
+  assert.ok(preview.warnings.some((item) => item.file === "/twitter.png"), "--allow-missing-media downgrades a meta image");
+  assert.ok(!preview.errors.some((item) => item.file === "/twitter.png"));
+});
+
 test("fails on exported case routes that are not public in app/_data/publication.ts", async (t) => {
   // Either route file is enough: an internal-review case as an RSC payload only, an unknown slug as HTML only.
   const root = await fixture(t, {

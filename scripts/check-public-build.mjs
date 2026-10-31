@@ -115,7 +115,12 @@ function resolveLocal(file, value, siteOrigins) {
     return null;
   }
   if (resolved.origin !== exportOrigin && !siteOrigins.includes(resolved.origin)) return null;
-  return decodeURIComponent(resolved.pathname);
+  try {
+    return decodeURIComponent(resolved.pathname);
+  } catch {
+    // A malformed escape such as "50%off" cannot name an exported file; report it as missing instead of crashing.
+    return resolved.pathname;
+  }
 }
 
 function existsInExport(fileSet, urlPath) {
