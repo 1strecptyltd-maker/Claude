@@ -27,7 +27,7 @@ test("renders the Spin Panda demo case from modular blocks", async () => {
   assert.match(html, /class="case-gallery"/);
   assert.match(html, /portfolio\/spin-panda\/food-detail\.jpg/);
   assert.match(html, /Credits/);
-  assert.match(html, /<dt>Media partner<\/dt><dd>Starlink<\/dd>/);
+  assert.match(html, /<dt>Agency partner<\/dt><dd>Starlink<\/dd>/);
   assert.match(html, /aria-label="Next project"/);
   assert.match(html, /href="\/work\/dr-lewinn\/"/);
   assert.match(html, /22 August 2026/);
