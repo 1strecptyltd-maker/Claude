@@ -113,10 +113,14 @@ export function featuredCaseStudies(): CaseStudy[] {
   return publicCaseStudies().filter((project) => getPublication(project.slug).featured);
 }
 
+// Founder decision 2026-11-01: the INDIBA photo leads the home page.
+export const HOME_HERO_SLUG = "indiba-icc";
+
 /** Hero project: a featured public case if one is set, otherwise the first public case in display order. */
 export function heroCaseStudy(): CaseStudy {
   const cases = publicCaseStudies();
-  const hero = cases.find((project) => getPublication(project.slug).featured) ?? cases[0];
+  const chosen = cases.find((project) => project.slug === HOME_HERO_SLUG);
+  const hero = chosen ?? cases.find((project) => getPublication(project.slug).featured) ?? cases[0];
   if (!hero) throw new Error("No public case study is available for the home page hero");
   return hero;
 }
