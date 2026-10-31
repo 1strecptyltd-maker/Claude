@@ -29,7 +29,10 @@ test("home hero leads with the INDIBA photograph", async () => {
     src.includes("/portfolio/indiba-icc/home-hero.jpg") || srcset.includes("/portfolio/indiba-icc/home-hero.jpg"),
     `hero image does not reference /portfolio/indiba-icc/home-hero.jpg (src: ${src})`,
   );
-  const caption = figure.match(/<figcaption>([^<]*)<\/figcaption>/)?.[1] ?? "";
+  const caption = (html.match(/<figure class="hero-media">[\s\S]*?<figcaption>([\s\S]*?)<\/figcaption>/)?.[1] ?? "").replace(
+    /<!--[\s\S]*?-->/g,
+    "",
+  ).trim();
   assert.ok(caption.startsWith("INDIBA"), `hero figcaption ${caption} does not start with INDIBA`);
   assert.ok(!html.includes("/portfolio/dr-lewinn/hero.jpg"), "home page still references the Dr. LeWinn's text-covered frame");
 });
