@@ -1,15 +1,17 @@
 import Image from "next/image";
-import { CaseStudyBlocks, FilmVideo } from "./CaseStudyBlocks";
+import type { CSSProperties } from "react";
+import { CaseStudyBlocks, FilmVideo, NextBlock } from "./CaseStudyBlocks";
 import { ContactBand } from "./ContactBand";
 import { PageShell } from "./PageShell";
+import { listedCaseStudies } from "../_data/publication";
 import { reviewNotice, withoutReviewNotes } from "../_data/review-notice";
 import type { CaseStudy } from "../_data/site";
 
-export function CaseStudyPage({ project, number }: { project: CaseStudy; number: string }) {
+export function CaseStudyPage({ project }: { project: CaseStudy }) {
   if (project.blocks?.length) {
     return (
       <PageShell current="/work/">
-        <CaseStudyBlocks project={project} number={number} blocks={project.blocks} />
+        <CaseStudyBlocks project={project} blocks={project.blocks} />
         <nav className="case-back" aria-label="Work navigation"><a className="text-link" href="/work/">Back to all work</a></nav>
         <ContactBand />
       </PageShell>
@@ -18,11 +20,13 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
 
   const films = project.films ?? (project.film ? [project.film] : []);
   const notice = reviewNotice(project);
+  const listed = listedCaseStudies();
+  const nextSlug = listed.length > 1 ? listed[(listed.findIndex((item) => item.slug === project.slug) + 1) % listed.length].slug : null;
 
   return (
     <PageShell current="/work/">
       <header className="case-hero">
-        <div><p className="eyebrow">{number} / {project.category}</p><h1>{project.client}</h1></div>
+        <div><p className="eyebrow">{project.category}</p><h1>{project.client}</h1></div>
         <p>{project.summary}</p>
       </header>
       <figure className="case-lead-image">
@@ -43,14 +47,14 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
       {films.length ? (
         <section className="case-film" aria-labelledby={`${project.slug}-film-heading`}>
           <div className="case-film-heading">
-            <p className="eyebrow">Selected film</p>
+            <p className="eyebrow">{films.length > 1 ? "Selected films" : "Selected film"}</p>
             <h2 id={`${project.slug}-film-heading`}>The project in motion.</h2>
             {notice ? <p>{notice}</p> : null}
           </div>
           <div className={`case-film-list${films.length > 1 ? " case-film-list--multiple" : ""}`}>
             {films.map((film, index) => (
               <figure className="case-film-item" key={film.src}>
-                {films.length > 1 ? <figcaption><span>{String(index + 1).padStart(2, "0")} / Film</span><strong>{film.title}</strong></figcaption> : null}
+                <figcaption>{films.length > 1 ? <span>{String(index + 1).padStart(2, "0")} / Film</span> : null}<strong>{film.title}</strong></figcaption>
                 <FilmVideo film={film} />
               </figure>
             ))}
@@ -60,12 +64,13 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
       {project.gallery?.length ? (
         <section className="case-gallery" aria-label={`${project.client} selected images`}>
           {project.gallery.map((asset) => (
-            <figure key={asset.image} style={asset.ratio ? { aspectRatio: asset.ratio } : undefined}>
+            <figure key={asset.image} style={{ "--r": asset.ratio ?? "3 / 2" } as CSSProperties}>
               <Image src={asset.image} alt={asset.alt} fill sizes="(max-width: 767px) 100vw, 60vw" style={{ objectFit: "contain", background: "var(--paper)" }} />
             </figure>
           ))}
         </section>
       ) : null}
+      {nextSlug ? <NextBlock block={{ type: "next", slug: nextSlug }} /> : null}
       <nav className="case-back" aria-label="Work navigation"><a className="text-link" href="/work/">Back to all work</a></nav>
       <ContactBand />
     </PageShell>

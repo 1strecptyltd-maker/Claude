@@ -27,6 +27,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const project = await listedProject(params);
-  const number = listedCaseStudies().findIndex((item) => item.slug === project.slug) + 1;
-  return <CaseStudyPage project={project} number={String(number).padStart(2, "0")} />;
+  return <CaseStudyPage project={project} />;
 }
