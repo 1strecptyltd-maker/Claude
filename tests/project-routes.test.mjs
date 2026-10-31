@@ -26,7 +26,9 @@ test("case studies share one slug route instead of per-case static routes", asyn
 
 test("the slug route looks projects up by slug and only generates publishable cases", async () => {
   const source = await readFile(new URL("work/[slug]/page.tsx", appUrl), "utf8");
-  assert.match(source, /export function generateStaticParams\(\)[\s\S]*listedCaseStudies\(\)/);
+  const staticParams = source.match(/^export function generateStaticParams\(\) \{\n([\s\S]*?)\n\}$/m)?.[1];
+  assert.ok(staticParams, "generateStaticParams() not found");
+  assert.match(staticParams, /^\s*return listedCaseStudies\(\)\.map\(\(project\) => \(\{ slug: project\.slug \}\)\);$/, "generateStaticParams() must map listedCaseStudies() only");
   assert.match(source, /export const dynamicParams = false/);
   assert.match(source, /isListed\(slug\)/);
   assert.match(source, /getCaseStudy\(slug\)/);

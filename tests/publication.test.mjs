@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -9,6 +11,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist/client");
 const includeInternal = process.env.FIRST_REC_INCLUDE_INTERNAL === "1";
 const binaryExtensions = /\.(png|jpe?g|gif|webp|avif|svg|ico|mp4|m4v|mov|webm|woff2?|ttf|otf)$/i;
+const exportedTextExtensions = /\.(html|rsc|js|css|json)$/;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -93,7 +96,67 @@ test("public build carries no internal-review slug, client name or media path", 
     if (/clearance pending|Internal review asset/i.test(text)) leaks.push(`${path}: internal-review notice`);
   }
   for (const media of hidden.flatMap((project) => project.media)) if (existsSync(join(dist, media))) leaks.push(`file ${media}`);
+  // Media not listed in site.ts (or listed under another slug's folder) is only caught by reference: every exported
+  // portfolio file must be used by an exported page, payload, script, stylesheet or data file.
+  const exportedText = (await Promise.all(files.filter((file) => exportedTextExtensions.test(file)).map((file) => readFile(file, "utf8")))).join("\n");
+  for (const file of files.filter((file) => file.startsWith(join(dist, "portfolio") + "/"))) {
+    const path = `/${relative(dist, file)}`;
+    if (!exportedText.includes(path)) leaks.push(`unreferenced file ${path}`);
+  }
   assert.deepEqual(leaks, []);
+});
+
+test("the media prune keeps every portfolio file the export references", async () => {
+  const files = (await walk(dist)).filter((file) => /\.(html|rsc|css)$/.test(file));
+  const referenced = new Set();
+  for (const file of files) {
+    for (const [path] of (await readFile(file, "utf8")).matchAll(/\/portfolio\/[^\s"'`()<>\\,?#&;]+/g)) referenced.add(decodeURI(path));
+  }
+  assert.ok(referenced.size > 0, "no /portfolio/ references found in the export");
+  const missing = [...referenced].filter((path) => existsSync(join(root, "public", path)) && !existsSync(join(dist, path)));
+  assert.deepEqual(missing, []);
+});
+
+test("the media prune refuses a public export that contains an internal-review case", async () => {
+  const records = await publicationRecords();
+  const publicSlug = [...records].find(([, status]) => status === "public")[0];
+  const internalSlug = [...records].find(([, status]) => status === "internal-review")[0];
+  const sandbox = await mkdtemp(join(tmpdir(), "first-rec-prune-"));
+  try {
+    await Promise.all(["scripts", "app/_data", "dist/client/work", "dist/client/portfolio"].map((dir) => mkdir(join(sandbox, dir), { recursive: true })));
+    await copyFile(join(root, "scripts/prune-unpublished-media.mjs"), join(sandbox, "scripts/prune-unpublished-media.mjs"));
+    await copyFile(join(root, "app/_data/publication.ts"), join(sandbox, "app/_data/publication.ts"));
+    const prune = () => spawnSync(process.execPath, [join(sandbox, "scripts/prune-unpublished-media.mjs")], {
+      encoding: "utf8",
+      env: { ...process.env, FIRST_REC_INCLUDE_INTERNAL: "" },
+    });
+
+    await writeFile(join(sandbox, `dist/client/work/${publicSlug}.rsc`), "");
+    assert.equal(prune().status, 0);
+    await writeFile(join(sandbox, `dist/client/work/${internalSlug}.rsc`), "");
+    const result = prune();
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, new RegExp(`internal-review case\\(s\\): ${internalSlug}\\.`));
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
+});
+
+test("vite.config.ts refuses a publication mode set in a dotenv file", async () => {
+  const sandbox = await mkdtemp(join(tmpdir(), "first-rec-dotenv-"));
+  try {
+    await writeFile(join(sandbox, ".env.production.local"), "FIRST_REC_INCLUDE_INTERNAL=1\n");
+    const result = spawnSync(process.execPath, [join(root, "node_modules/vite/bin/vite.js"), "build", "--config", join(root, "vite.config.ts")], {
+      cwd: sandbox,
+      encoding: "utf8",
+      timeout: 60_000,
+      env: { ...process.env, FIRST_REC_INCLUDE_INTERNAL: "" },
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stdout + result.stderr, /FIRST_REC_INCLUDE_INTERNAL is set in \.env\.production\.local/);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 });
 
 test("home hero uses a public case", async () => {
