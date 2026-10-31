@@ -1,15 +1,28 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { checkPublicBuild, knownMissingMedia, parseArgs } from "../scripts/check-public-build.mjs";
 
 const script = fileURLToPath(new URL("../scripts/check-public-build.mjs", import.meta.url));
 const run = promisify(execFile);
+const includeInternal = process.env.FIRST_REC_INCLUDE_INTERNAL === "1";
+
+// Stand-in for app/: the publication records and the work/ route folders the check reads.
+async function fixtureApp(publication) {
+  const root = await mkdtemp(path.join(tmpdir(), "check-public-build-app-"));
+  for (const folder of ["_data", "work/[slug]", "work/food-hospitality"]) await mkdir(path.join(root, folder), { recursive: true });
+  await writeFile(path.join(root, "_data/publication.ts"), publication);
+  return root;
+}
+
+// "case" is public and "secret" internal-review; food-hospitality is a page, not a case.
+const appDir = await fixtureApp(`export const publication = {\n  "case": record("public", "fixture"),\n  "secret": record("internal-review", "fixture"),\n};\n`);
+after(() => rm(appDir, { recursive: true, force: true }));
 
 function page(body, { siteUrl = "https://www.firstrec.work", email = "info@firstrec.com.au" } = {}) {
   return `<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/>`
@@ -48,7 +61,7 @@ async function fixture(t, overrides = {}) {
 }
 
 async function check(root, extra = {}) {
-  return checkPublicBuild({ ...parseArgs([root]), ...extra });
+  return checkPublicBuild({ ...parseArgs([root, `--app-dir=${appDir}`]), ...extra });
 }
 
 function categories(list) {
@@ -60,7 +73,7 @@ test("passes a clean export and exits 0 from the CLI", async (t) => {
   const result = await check(root);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, []);
-  const { stdout } = await run(process.execPath, [script, root, "--expect-site-url=https://www.firstrec.work"]);
+  const { stdout } = await run(process.execPath, [script, root, `--app-dir=${appDir}`, "--expect-site-url=https://www.firstrec.work"]);
   assert.match(stdout, /PASS/);
 });
 
@@ -95,7 +108,7 @@ test("accepts either production origin, and --expect-site-url narrows it to one"
   const root = await fixture(t, Object.fromEntries(Object.entries(cleanFiles).map(([file, content]) => [file, file.endsWith(".html") ? content.replaceAll("https://www.firstrec.work", "https://www.firstrec.com.au") : content])));
   assert.deepEqual((await check(root)).errors, []);
 
-  const narrowed = await check(root, parseArgs([root, "--expect-site-url=https://www.firstrec.work"]));
+  const narrowed = await check(root, { siteOrigins: parseArgs(["--expect-site-url=https://www.firstrec.work"]).siteOrigins });
   assert.ok(narrowed.errors.some((item) => item.category === "site-url" && /firstrec\.com\.au, expected https:\/\/www\.firstrec\.work$/.test(item.detail)));
 });
 
@@ -151,8 +164,8 @@ test("fails on the default contact email unless --allow-default-email is passed"
   assert.deepEqual(relaxed.errors, []);
   assert.deepEqual(categories(relaxed.warnings), ["default-email"]);
 
-  await assert.rejects(run(process.execPath, [script, root]), (error) => error.code === 1 && /FAIL/.test(error.stdout));
-  const { stdout } = await run(process.execPath, [script, root, "--allow-default-email"]);
+  await assert.rejects(run(process.execPath, [script, root, `--app-dir=${appDir}`]), (error) => error.code === 1 && /FAIL/.test(error.stdout));
+  const { stdout } = await run(process.execPath, [script, root, `--app-dir=${appDir}`, "--allow-default-email"]);
   assert.match(stdout, /PASS \(1 warning/);
 });
 
@@ -165,6 +178,77 @@ test("requires mailto links to use the expected contact email", async (t) => {
   const noneResult = await check(none);
   assert.ok(noneResult.errors.some((item) => item.category === "contact-email" && /no mailto:info@firstrec\.com\.au link found/.test(item.detail)));
 
-  const custom = await check(other, parseArgs([other, "--expect-email=someone@example.com"]));
+  const custom = await check(other, { contactEmail: parseArgs(["--expect-email=someone@example.com"]).contactEmail });
   assert.ok(custom.errors.some((item) => /mailto:info@firstrec\.com\.au .*expected someone@example\.com/.test(item.detail)));
+});
+
+test("--allow-default-email waives the contact link only when the old default address is linked instead", async (t) => {
+  const linking = (email) => Object.fromEntries(Object.entries(cleanFiles).map(([file, content]) => [file, file.endsWith(".html") ? content.replace(/<a href="mailto:[^<]*<\/a>/, email ? `<a href="mailto:${email}">${email}</a>` : "") : content]));
+  const noContactLink = ({ errors }) => errors.some((item) => item.category === "contact-email" && /no mailto:info@firstrec\.com\.au link found/.test(item.detail));
+
+  const linked = await fixture(t, linking("hello@cheese.studio"));
+  assert.ok(noContactLink(await check(linked)));
+  const relaxed = await check(linked, { allowDefaultEmail: true });
+  assert.deepEqual(relaxed.errors, []);
+  assert.deepEqual(categories(relaxed.warnings), ["default-email"]);
+
+  const none = await fixture(t, linking(null));
+  assert.ok(noContactLink(await check(none, { allowDefaultEmail: true })), "a build without any contact link must still fail");
+  const unlinked = await fixture(t, { ...linking(null), "_next/static/chunks/contact.js": `const fallback="hello@cheese.studio";` });
+  assert.ok(noContactLink(await check(unlinked, { allowDefaultEmail: true })), "the old address in a script is not a contact link");
+});
+
+test("checks same-origin absolute and protocol-relative URLs, og:image and twitter:image included", async (t) => {
+  const root = await fixture(t, {
+    "og.png": null,
+    "work/case/index.html": page(`<img src="https://www.firstrec.work/portfolio/a/absolute.jpg" srcset="//www.firstrec.work/portfolio/a/protocol.jpg 2x, https://www.firstrec.work/portfolio/a/hero.jpg 1x" alt=""/>`
+      + `<a href="https://www.firstrec.com.au/work/gone/">Other production origin</a><img src="https://cdn.example.com/a.jpg" alt=""/><img src="//cdn.example.com/b.jpg" alt=""/>`),
+  });
+  const missing = (await check(root)).errors.filter((item) => item.category === "missing-file");
+  assert.deepEqual(missing.map((item) => item.file).sort(), ["/og.png", "/portfolio/a/absolute.jpg", "/portfolio/a/protocol.jpg", "/work/gone/"]);
+  assert.match(missing.find((item) => item.file === "/og.png").detail, /^og:image referenced by 4 file\(s\)/);
+
+  const narrowed = await check(root, { siteOrigins: parseArgs(["--expect-site-url=https://www.firstrec.work"]).siteOrigins });
+  assert.ok(!narrowed.errors.some((item) => item.file === "/work/gone/"), "only the expected origins count as local");
+});
+
+test("fails on exported case routes that are not public in app/_data/publication.ts", async (t) => {
+  // Either route file is enough: an internal-review case as an RSC payload only, an unknown slug as HTML only.
+  const root = await fixture(t, {
+    "work/secret.rsc": `0:{}`,
+    "work/unlisted/index.html": page(""),
+    "work/food-hospitality/index.html": page(""),
+    "work/food-hospitality.rsc": `0:{}`,
+  });
+  const { errors } = await check(root);
+  const flagged = errors.filter((item) => item.category === "publication").map((item) => `${item.file} ${item.detail}`);
+  assert.equal(flagged.length, 2, flagged.join("\n"));
+  assert.match(flagged[0], /^work\/secret\/ internal-review case was exported/);
+  assert.match(flagged[1], /^work\/unlisted\/ neither a case in app\/_data\/publication\.ts nor a page in app\/work\//);
+
+  // The repo's own app/ by default: "case" is not one of its cases.
+  const repo = await checkPublicBuild(parseArgs([await fixture(t)]));
+  assert.deepEqual(repo.errors.map((item) => `${item.category} ${item.file}`), ["publication work/case/"]);
+});
+
+test("fails loudly when no publication records can be read", async (t) => {
+  const root = await fixture(t);
+  // Reindented records no longer match: report that once instead of calling every exported case unknown.
+  const reformatted = await fixtureApp(`export const publication = {\n    "case": record("public", "fixture"),\n};\n`);
+  t.after(() => rm(reformatted, { recursive: true, force: true }));
+  const { errors } = await check(root, { appDir: reformatted });
+  assert.deepEqual(errors.map((item) => `${item.category} ${item.detail}`), ["publication no publication records parsed; cannot tell public cases from internal-review ones"]);
+
+  const absent = await check(root, { appDir: path.join(root, "missing-app") });
+  assert.ok(absent.errors.some((item) => item.category === "publication" && /ENOENT/.test(item.detail)));
+});
+
+// Runs on the build npm test has just made in dist/client/, with this repo's app/.
+test("flags every internal-review case of the internal preview build, and none of a public build", async () => {
+  const source = await readFile(new URL("../app/_data/publication.ts", import.meta.url), "utf8");
+  const internal = [...source.matchAll(/"([a-z0-9-]+)": record\("internal-review"/g)].map(([, slug]) => `work/${slug}/`).sort();
+  const { errors } = await checkPublicBuild(parseArgs([]));
+  assert.ok(!errors.some((item) => item.category === "export"), "run `npm run build` before this test");
+  const flagged = errors.filter((item) => item.category === "publication").map((item) => item.file).sort();
+  assert.deepEqual(flagged, includeInternal ? internal : []);
 });

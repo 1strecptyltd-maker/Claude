@@ -4,10 +4,12 @@
 // Usage: node scripts/check-public-build.mjs [exportDir] [options]
 //   --allow-missing-media[=a,b]  Downgrade known-absent media to warnings. Without a
 //                                list, uses the videos from HANDOFF.md section 6c.
-//   --allow-default-email        Do not fail on the old default hello@cheese.studio address.
+//   --allow-default-email        Downgrade the old default hello@cheese.studio address to a warning;
+//                                a mailto: link to it then counts as the contact link.
 //   --expect-site-url=URL        Require this one origin instead of either production origin.
 //   --expect-email=ADDRESS       Require this contact address instead of info@firstrec.com.au.
 //   --allow-placeholders         Downgrade generated placeholder media to warnings (preview builds only).
+//   --app-dir=DIR                Read case statuses and /work/ pages from DIR instead of this repo's app/.
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,6 +38,7 @@ const defaultEmail = "hello@cheese.studio";
 const textExtensions = new Set([".html", ".rsc", ".js", ".mjs", ".css", ".json", ".xml", ".txt", ".map", ".webmanifest", ".svg"]);
 const textNames = new Set(["_headers", "_redirects", ".assetsignore"]);
 const xmlNamespaceHosts = new Set(["www.w3.org"]);
+const exportOrigin = "https://export.invalid";
 
 const leakPatterns = [
   { label: "internal index route /work/approved", pattern: /\/work\/approved\b/g },
@@ -45,7 +48,7 @@ const leakPatterns = [
 ];
 
 export function parseArgs(argv) {
-  const options = { exportDir: path.join(projectRoot, "dist", "client"), allowMissingMedia: null, allowDefaultEmail: false, allowPlaceholders: false, siteOrigins: productionSiteOrigins, contactEmail: expectedContactEmail };
+  const options = { exportDir: path.join(projectRoot, "dist", "client"), appDir: path.join(projectRoot, "app"), allowMissingMedia: null, allowDefaultEmail: false, allowPlaceholders: false, siteOrigins: productionSiteOrigins, contactEmail: expectedContactEmail };
   for (const arg of argv) {
     if (arg === "--allow-missing-media") options.allowMissingMedia = knownMissingMedia;
     else if (arg.startsWith("--allow-missing-media=")) options.allowMissingMedia = arg.slice(arg.indexOf("=") + 1).split(",").filter(Boolean);
@@ -53,6 +56,7 @@ export function parseArgs(argv) {
     else if (arg === "--allow-placeholders") options.allowPlaceholders = true;
     else if (arg.startsWith("--expect-site-url=")) options.siteOrigins = [new URL(arg.slice(arg.indexOf("=") + 1)).origin];
     else if (arg.startsWith("--expect-email=")) options.contactEmail = arg.slice(arg.indexOf("=") + 1);
+    else if (arg.startsWith("--app-dir=")) options.appDir = path.resolve(arg.slice(arg.indexOf("=") + 1));
     else if (arg.startsWith("--")) throw new Error(`Unknown option ${arg}`);
     else options.exportDir = path.resolve(arg);
   }
@@ -81,7 +85,7 @@ function lineOf(text, index) {
   return text.slice(0, index).split("\n").length;
 }
 
-// Returns local URL references from HTML attributes and CSS url().
+// Returns URL references from HTML attributes, meta URLs (og:image, twitter:image, canonical) and CSS url().
 function collectReferences(file, text) {
   const references = [];
   if (file.endsWith(".html")) {
@@ -92,6 +96,7 @@ function collectReferences(file, text) {
         if (value) references.push({ attribute: match[1].toLowerCase(), value });
       }
     }
+    for (const { name, url } of metaUrls(text)) references.push({ attribute: name, value: url });
   }
   if (file.endsWith(".html") || file.endsWith(".css")) {
     for (const match of decodeEntities(text).matchAll(/url\(\s*(["']?)([^"')]+)\1\s*\)/gi)) references.push({ attribute: "url()", value: match[2].trim() });
@@ -99,11 +104,17 @@ function collectReferences(file, text) {
   return references;
 }
 
-function resolveLocal(file, value) {
-  if (!value || value.startsWith("#") || value.startsWith("data:") || value.startsWith("//")) return null;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null;
-  const base = new URL(`https://export.invalid/${file}`);
-  const resolved = new URL(value, base);
+// Returns the export path a reference points to, or null when it points elsewhere. Absolute and protocol-relative
+// URLs on a site origin count as local: a missing og:image 404s after upload just like a missing <img src>.
+function resolveLocal(file, value, siteOrigins) {
+  if (!value || value.startsWith("#") || value.startsWith("data:")) return null;
+  let resolved;
+  try {
+    resolved = new URL(value, `${exportOrigin}/${file}`);
+  } catch {
+    return null;
+  }
+  if (resolved.origin !== exportOrigin && !siteOrigins.includes(resolved.origin)) return null;
   return decodeURIComponent(resolved.pathname);
 }
 
@@ -129,6 +140,16 @@ function metaUrls(html) {
     if (rel && href && /^(canonical|alternate)$/i.test(rel) && /^[a-z]+:/i.test(href)) urls.push({ name: `link[rel=${rel}]`, url: decodeEntities(href) });
   }
   return urls;
+}
+
+// Case slugs by publication status, parsed the same way as scripts/prune-unpublished-media.mjs, and the static
+// pages under app/work/ (such as food-hospitality), which are not case routes.
+async function readPublication(appDir) {
+  const source = await readFile(path.join(appDir, "_data", "publication.ts"), "utf8");
+  const statuses = new Map([...source.matchAll(/^ {2}"([a-z0-9-]+)": record\("(public|internal-review)"/gm)].map(([, slug, status]) => [slug, status]));
+  if (statuses.size === 0) throw new Error("no publication records parsed");
+  const entries = await readdir(path.join(appDir, "work"), { withFileTypes: true });
+  return { statuses, workPages: new Set(entries.filter((entry) => entry.isDirectory() && /^[a-z0-9-]+$/.test(entry.name)).map((entry) => entry.name)) };
 }
 
 export async function checkPublicBuild(options) {
@@ -159,6 +180,24 @@ export async function checkPublicBuild(options) {
     }
   }
   if (files.some((file) => file === "work/approved/index.html" || file.startsWith("work/approved/"))) add(errors, "internal-leak", "work/approved/", "internal index route was exported");
+
+  // Case routes. The internal-review preview (FIRST_REC_INCLUDE_INTERNAL=1) exports every case study, a public build
+  // only those marked "public". Anything else under work/ must be a static page from app/work/.
+  const publicationFile = path.join(options.appDir, "_data", "publication.ts");
+  let publication = null;
+  try {
+    publication = await readPublication(options.appDir);
+  } catch (error) {
+    add(errors, "publication", publicationFile, `${error.message}; cannot tell public cases from internal-review ones`);
+  }
+  const routeSlugs = new Set(files.map((file) => /^work\/([^/]+?)(?:\.rsc$|\/)/.exec(file)?.[1]).filter(Boolean));
+  for (const slug of publication ? [...routeSlugs].sort() : []) {
+    const status = publication.statuses.get(slug);
+    if (status === "public" || (status === undefined && publication.workPages.has(slug))) continue;
+    add(errors, "publication", `work/${slug}/`, status
+      ? `${status} case was exported (internal preview build? rebuild without FIRST_REC_INCLUDE_INTERNAL)`
+      : "neither a case in app/_data/publication.ts nor a page in app/work/ (built from another checkout?)");
+  }
 
   const siteOrigins = new Map();
   const missing = new Map();
@@ -222,7 +261,7 @@ export async function checkPublicBuild(options) {
     }
 
     for (const { attribute, value } of collectReferences(file, text)) {
-      const urlPath = resolveLocal(file, value);
+      const urlPath = resolveLocal(file, value, options.siteOrigins);
       if (urlPath === null || existsInExport(fileSet, urlPath)) continue;
       const key = urlPath;
       if (!missing.has(key)) missing.set(key, { attribute, files: new Set() });
@@ -246,7 +285,8 @@ export async function checkPublicBuild(options) {
   for (const [address, referrers] of mailtoFiles) {
     if (address !== contactEmail && address !== defaultEmail) add(errors, "contact-email", [...referrers][0], `mailto:${address} in ${referrers.size} file(s); expected ${contactEmail}`);
   }
-  if (!mailtoFiles.has(contactEmail) && !options.allowDefaultEmail) add(errors, "contact-email", "*", `no mailto:${contactEmail} link found; set NEXT_PUBLIC_CONTACT_EMAIL=${contactEmail}`);
+  // --allow-default-email lets a link to the old default address stand in; a build with no contact link still fails.
+  if (!mailtoFiles.has(contactEmail) && !(options.allowDefaultEmail && mailtoFiles.has(defaultEmail))) add(errors, "contact-email", "*", `no mailto:${contactEmail} link found; set NEXT_PUBLIC_CONTACT_EMAIL=${contactEmail}`);
 
   // Generated stand-ins (scripts/generate-placeholder-media.mjs) must be replaced with real media before upload.
   const placeholders = [];

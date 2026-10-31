@@ -82,12 +82,13 @@ It exits non-zero and prints a grouped report when the export:
 
 - contains `localhost` / `127.0.0.1` or `http://` site URLs (HTML, OG/canonical meta, sitemap, RSC payloads, `host:port` forms in JS);
 - leaks internal data: `/work/approved`, `drive.google.com`, `docs.google.com` or Google Drive folder-ID-like strings;
-- references a local `src` / `href` / `poster` / `srcset` / CSS `url()` file that is not in `dist/client/`;
+- exports a case route (`work/<slug>/` or `work/<slug>.rsc`) whose slug is not `"public"` in `app/_data/publication.ts`, so an internal-review preview build always fails with each of its internal-review cases named; any other route under `work/` must be a page in `app/work/` (such as `food-hospitality`);
+- references a file that is not in `dist/client/` from `src` / `href` / `poster` / `srcset` / CSS `url()` or `og:image` / `twitter:image` meta, whether the URL is relative or absolute on the site origin (`https://www.firstrec.work/...`, `//www.firstrec.work/...`);
 - lacks `404.html`, a route's `index.html`, or still has flat `route.html` files (normalisation did not run);
 - shows no https absolute meta URL (so `NEXT_PUBLIC_SITE_URL` was not set), or a meta URL origin other than `https://www.firstrec.work` or `https://www.firstrec.com.au` (`docs/DECISIONS.md`; `--expect-site-url` narrows this to one);
 - contains the old default contact email `hello@cheese.studio`, has a `mailto:` link to any address other than `info@firstrec.com.au`, or has no `mailto:info@firstrec.com.au` link at all (`--expect-email=` changes the expected address).
 
-Flags for local/preview builds only: `--allow-missing-media` turns the videos listed in `HANDOFF.md` section 6c into warnings (or pass `--allow-missing-media=/path/a.mp4,/path/b.jpg`); `--allow-default-email` turns the old default email into a warning. Do not upload a build that only passes with these flags.
+Flags for local/preview builds only: `--allow-missing-media` turns the videos listed in `HANDOFF.md` section 6c into warnings (or pass `--allow-missing-media=/path/a.mp4,/path/b.jpg`); `--allow-default-email` turns the old default email into a warning and accepts a `mailto:hello@cheese.studio` link in place of the `mailto:info@firstrec.com.au` one (a build with no contact link at all still fails). Do not upload a build that only passes with these flags.
 
 State on 2026-10-31 (public build from this repository after U3, with `NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au`; 83 files, 6 public cases): **FAIL** with 6 errors, all videos from `HANDOFF.md` 6c that are not in Git:
 
