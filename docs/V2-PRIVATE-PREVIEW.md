@@ -110,8 +110,9 @@ now ≥ link.expires_at       → 410 「This preview link has expired.」
 
 - 会话 ID：32 字节 CSPRNG；数据库只存哈希。
 - Cookie：`__Host-pv_session`，`Secure; HttpOnly; SameSite=Lax; Path=/`，无 `Domain`（`__Host-` 前缀强制这些属性，绑定到预览主机）。
-- 会话有效期 = `min(link.expires_at, 创建后 12 小时)`；过了就要回到原链接再点一次（只要链接还有效）。**Proposed**。
-- **每个请求**都同时检查：会话存在且未过期、所属链接未撤销且未过期。撤销链接立即使所有会话失效，不需要逐个清理。
+- 会话有效期 = `min(link.expires_at, 创建后 12 小时)`；过了就要从收到的邮件 / 消息里重新打开原链接、再点一次「View preview」（只要链接还有效）。服务端**无法**替用户跳回落地页：数据库只有 `token_hash`（§3.2），会话、Cookie 和 `/v/{link_public_id}` 里都没有 token，拼不出 `/p/{token}`；本设计也**有意不**在任何地方保留明文或可解密的 token（威胁模型 T7）。所以会话过期时只显示一页「请重新打开收到的链接」（403，§8），不做重定向。**Proposed**。
+- Cookie 的 `Max-Age` 取到链接 `expires_at` 为止的剩余时间，而不是会话的 12 小时：会话过期后浏览器仍会带上它，服务端才能认出「这是本链接一个已过期的会话」并显示上面那一页；会话是否有效只看数据库里的 `expires_at`，过期的会话行保留到所属链接过期后再清理。浏览器已经删掉 Cookie 时，服务端分不出「会话过期」和「从未打开」，按下一条的 ① 回 404，404 文案同样请对方重新打开收到的链接（§8）。
+- **每个请求**都查库，按顺序判定：① 没有 Cookie、会话哈希查不到，或会话不属于 URL 里的这条链接 → 404；② 所属链接已撤销 / 已过期 → 410（§8 的文案；持有会话的人本来就知道这条链接存在）；③ 会话已过期 → 403（不用 401：这里没有 HTTP 认证质询可发）；④ 否则正常返回。撤销链接立即使所有会话失效，不需要逐个清理。媒体请求 `/m/…` 任何一步不通过都只回 404（§4.5）。
 - `link_public_id` 是链接的另一个随机 ID（UUID v4），只用于 URL 路由；它**不是凭据**，没有会话 Cookie 时访问 `/v/{link_public_id}` 一律 404。
 
 ### 4.3 预览页
@@ -239,7 +240,7 @@ now ≥ link.expires_at       → 410 「This preview link has expired.」
 | T4 | 拿到原件 | 任何路径 | 原件不在 Storage、不在 Web root；预览服务没有访问原件位置的权限 | 无（设计上不存在路径） |
 | T5 | 看到内部记录 | 通过预览页、错误信息、API 响应 | 预览服务角色只能读视图里的必要列；错误页不带堆栈 / SQL；页面只渲染清单内容 | 低 |
 | T6 | token 被转发 / 泄露给第三人 | 客户转发邮件、群聊 | 7 天过期；随时撤销；统计里能看到异常的多会话 / 多国家；`recipient` 标签便于追溯 | **接受**：持有链接即可查看，这是「无账号链接」的本质。需要更强时用 PQ-6 的第二因子 |
-| T7 | token 进日志 / 历史 / Referer | 代理日志、浏览器历史、外链 Referer | 关闭预览主机 access log；落地页后立刻换成会话、地址栏去 token；`Referrer-Policy: no-referrer`；页面无外链 / 第三方资源 | 浏览器历史残留：接受 |
+| T7 | token 进日志 / 历史 / Referer / Cookie | 代理日志、浏览器历史、外链 Referer、被盗的 Cookie | 关闭预览主机 access log；落地页后立刻换成会话、地址栏去 token；`Referrer-Policy: no-referrer`；页面无外链 / 第三方资源；明文或可解密的 token 不进 Cookie、会话表或任何 URL（偷到 Cookie 最多拿到一个 12 小时的会话，拿不到 7 天的链接）——代价是会话过期后服务端拼不出 `/p/{token}`，只能请对方重新打开原链接（§4.2、§8） | 浏览器历史残留：接受；会话过期后要回原邮件重新打开链接：接受 |
 | T8 | 链接预览机器人 | 邮件网关 / IM 自动抓取 | GET 只给无内容落地页；POST 才开会话；落地页无 OG 内容 | 统计偶有误差 |
 | T9 | 签名 URL 被分享 | 复制 `/m/…` 发给别人 | 签名绑定会话 Cookie；10 / 60 分钟过期 | 低 |
 | T10 | 撤销后继续访问 | 撤销前已打开的页面、已签 URL | 每个请求查库；撤销立即生效 | 已下载 / 已截图的内容：**接受，无法收回** |
@@ -258,17 +259,17 @@ now ≥ link.expires_at       → 410 「This preview link has expired.」
 
 | 情况 | HTTP | 文案 |
 | --- | --- | --- |
-| 无效 token / 无会话 / 媒体 404 | 404 | “This page isn’t available. If you were sent a preview link, please check it or contact info@firstrec.com.au.” |
+| 无效 token / 无会话（含浏览器已删掉过期会话的 Cookie）/ 媒体 404 | 404 | “This page isn’t available. If you were sent a preview link, please open it again from the message you received, or contact info@firstrec.com.au.” |
 | 已过期 | 410 | “This preview link has expired. Please contact info@firstrec.com.au for a new one.” |
 | 已撤销 | 410 | “This preview link is no longer available. Please contact info@firstrec.com.au.” |
-| 会话过期（链接仍有效） | 303 → 落地页 | 落地页正常显示 “View preview” 按钮 |
+| 会话已结束（浏览器带着本链接已过期的会话 Cookie，链接仍有效；§4.2 ③） | 403 | “Your viewing session has ended. Please open the preview link you were sent again to keep viewing, or contact info@firstrec.com.au.” 不重定向：服务端没有 token，拼不出落地页地址（§4.2）。页面和落地页一样不含任何客户或案例内容 |
 | 限速 | 429 | “Too many requests. Please wait a few minutes and try again.” |
 | 服务故障 | 503 | “The preview is temporarily unavailable. Please try again later or contact info@firstrec.com.au.” |
 
 ## 9. 测试计划（只用隔离临时后端）
 
 - 临时 Postgres（或 Supabase CLI 本地栈）+ 临时 Storage（本地 MinIO 或 Supabase 本地 Storage），每次测试创建、结束销毁；样例图片 / 视频用自己生成的测试文件，**不用任何客户素材**。
-- 用例至少覆盖：token 生成长度 / 字符集 / 唯一性；数据库里只有哈希；明文不出现在任何日志（grep）；7 天边界（时钟模拟）；撤销后页面、已签 URL、会话立即失效；签名篡改 / 过期 / 换会话 / 换 alias / 换 variant 全部 404；跨链接 IDOR；`VIEW_ONLY` 下无下载入口、`Content-Disposition: inline`、不发 2400（未勾选时）；`DOWNLOAD_DERIVATIVES` 只给衍生文件；GET 落地页不创建会话；所有响应头（§4.3）；Range 请求；统计计数正确、机器人 GET 不计入 `opened`；公共站构建产物里没有任何预览痕迹。
+- 用例至少覆盖：token 生成长度 / 字符集 / 唯一性；数据库里只有哈希；明文不出现在任何日志（grep）；7 天边界（时钟模拟）；撤销后页面、已签 URL、会话立即失效；会话过期（时钟快进 12 小时、链接仍有效）：带旧 Cookie 访问 `/v/{public_id}` 得到 403「session ended」页，没有 `Location`、不含客户内容，不带 Cookie 得到 404，`/m/…` 得到 404，重新打开 `/p/{token}` 并点击后恢复访问，带旧 Cookie 但链接已撤销 / 过期得到 410；签名篡改 / 过期 / 换会话 / 换 alias / 换 variant 全部 404；跨链接 IDOR；`VIEW_ONLY` 下无下载入口、`Content-Disposition: inline`、不发 2400（未勾选时）；`DOWNLOAD_DERIVATIVES` 只给衍生文件；GET 落地页不创建会话；所有响应头（§4.3）；Range 请求；统计计数正确、机器人 GET 不计入 `opened`；公共站构建产物里没有任何预览痕迹。
 - 上线前在 staging 由人工用两台设备 / 两个浏览器交叉验证 Cloudflare 不缓存。
 
 ## 10. 后续实现单元
@@ -295,7 +296,7 @@ now ≥ link.expires_at       → 410 「This preview link has expired.」
 | P-D2 | 运行时：独立 Node 小服务容器，专用最小权限数据库角色；Supabase Storage 不暴露公网 | Proposed — needs founder sign-off | |
 | P-D3 | token 256 bit、`pv_` 前缀、只存 SHA-256、明文只显示一次 | Proposed — needs founder sign-off | |
 | P-D4 | GET 落地页 + POST 开会话的两步打开方式 | Proposed — needs founder sign-off | |
-| P-D5 | 会话最长 12 小时，且不超过链接有效期 | Proposed — needs founder sign-off | |
+| P-D5 | 会话最长 12 小时，且不超过链接有效期；过期后显示「请重新打开收到的链接」页（403），不跳回落地页（服务端不保留 token） | Proposed — needs founder sign-off | |
 | P-D6 | 逐素材授权，链接素材清单为快照 | Proposed — needs founder sign-off | |
 | P-D7 | 自签名、绑定会话的媒体 URL；图片 10 分钟、视频 60 分钟 | Proposed — needs founder sign-off | |
 | P-D8 | 默认 `VIEW_ONLY`；`VIEW_ONLY` 默认只发 ≤1600 规格；不承诺防截图 / 防下载的声明 | Proposed — needs founder sign-off | |
