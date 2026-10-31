@@ -7,6 +7,8 @@ import test from "node:test";
 const includeInternal = process.env.FIRST_REC_INCLUDE_INTERNAL === "1";
 const internalOnly = { skip: !includeInternal && "internal-review cases are not exported; run npm run test:internal" };
 const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
+// Review notes ("Public display authorised / …") appear in the internal preview only (docs/QA-REPORT-2026-10-30.md M4).
+const assertReviewNotice = (html, note) => (includeInternal ? assert.match : assert.doesNotMatch)(html, note);
 
 const pages = [
   ["index.html", /Visual production that/],
@@ -144,7 +146,7 @@ test("renders Spin Panda's authorised media and the shared work categories", asy
   assert.match(spinPanda, /portfolio\/spin-panda\/film\.mp4/);
   assert.match(spinPanda, /22 August 2026/);
   assert.match(spinPanda, /Starlink/);
-  assert.match(spinPanda, /Public display authorised/);
+  assertReviewNotice(spinPanda, /Public display authorised/);
   assert.match(spinPanda, /Central Park opening event/);
   assert.match(work, /Spin Panda/);
   assert.match(work, /Film \+ production/);
@@ -162,8 +164,8 @@ test("indexes the authorised Dr. LeWinn's film series and all selected films", a
   assert.match(project, /anniversary-film\.mp4/);
   assert.match(project, /ceo-interview\.mp4/);
   assert.match(project, /jade-interview\.mp4/);
-  assert.match(project, /Public display authorised/);
-  assert.match(project, /Direct client project/);
+  assertReviewNotice(project, /Public display authorised/);
+  assertReviewNotice(project, /Direct client project/);
   assert.doesNotMatch(project, /case-gallery/);
   assert.doesNotMatch(project, /Publication clearance pending/);
   assert.match(work, /Dr\. LeWinn/);
@@ -183,18 +185,18 @@ test("renders the four authorised locally ingested projects with their selected 
 
   assert.match(indiba, /portfolio\/indiba-icc\/film\.mp4/);
   assert.match(indiba, /activation-wall\.jpg/);
-  assert.match(indiba, /Public display authorised/);
+  assertReviewNotice(indiba, /Public display authorised/);
   assert.doesNotMatch(indiba, /Publication clearance pending/);
 
   assert.match(joLoves, /portfolio\/jo-loves\/film\.mp4/);
   assert.match(joLoves, /product-demo\.jpg/);
-  assert.match(joLoves, /Public display authorised/);
+  assertReviewNotice(joLoves, /Public display authorised/);
   assert.doesNotMatch(joLoves, /Publication clearance pending/);
 
   assert.match(mmKaraoke, /portfolio\/mm-karaoke\/hero\.jpg/);
   assert.match(mmKaraoke, /fruit-platter\.jpg/);
   assert.doesNotMatch(mmKaraoke, /<video/);
-  assert.match(mmKaraoke, /Public display authorised/);
+  assertReviewNotice(mmKaraoke, /Public display authorised/);
 
   assert.match(nvidia, /portfolio\/nvidia\/hero\.jpg/);
   assert.match(nvidia, /speaker-portrait\.jpg/);

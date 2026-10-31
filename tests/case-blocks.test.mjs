@@ -31,7 +31,7 @@ test("renders the Spin Panda demo case from modular blocks", async () => {
   assert.match(html, /aria-label="Next project"/);
   assert.match(html, /href="\/work\/dr-lewinn\/"/);
   assert.match(html, /22 August 2026/);
-  assert.match(html, /Public display authorised/);
+  (process.env.FIRST_REC_INCLUDE_INTERNAL === "1" ? assert.match : assert.doesNotMatch)(html, /Public display authorised/);
   assert.match(html, /Back to all work/);
 
   // Blocks keep the original aspect ratio of lead and gallery media.

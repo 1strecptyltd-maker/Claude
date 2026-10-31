@@ -68,3 +68,16 @@ test("the home hero image is not hidden when visitors prefer reduced motion", as
   assert.match(css.slice(motionStart), /\.hero-image-frame::after \{ animation: curtain-up [^}]*both; \}/);
   assert.match(css, /@keyframes curtain-up \{ from \{ transform: translateY\(0\); \} to \{ transform: translateY\(-101%\); \} \}/);
 });
+
+test("public builds never show review notes to visitors (QA M4)", { skip: includeInternal && "internal-review preview build shows review notes on purpose" }, async () => {
+  const root = new URL("../dist/client/", import.meta.url);
+  const files = (await readdir(root, { recursive: true })).filter((file) => /\.(html|rsc)$/.test(file));
+  assert.ok(files.length > 0, "no exported pages found");
+  const leaks = [];
+  for (const file of files) {
+    const text = await readFile(new URL(file, root), "utf8");
+    const hit = text.match(/Public display authorised|credits to confirm|clearance pending|Internal review asset|Direct client project/i);
+    if (hit) leaks.push(`${file}: ${hit[0]}`);
+  }
+  assert.deepEqual(leaks, []);
+});

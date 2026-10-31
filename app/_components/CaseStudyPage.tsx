@@ -2,6 +2,7 @@ import Image from "next/image";
 import { CaseStudyBlocks, FilmVideo } from "./CaseStudyBlocks";
 import { ContactBand } from "./ContactBand";
 import { PageShell } from "./PageShell";
+import { reviewNotice, withoutReviewNotes } from "../_data/review-notice";
 import type { CaseStudy } from "../_data/site";
 
 export function CaseStudyPage({ project, number }: { project: CaseStudy; number: string }) {
@@ -16,6 +17,7 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
   }
 
   const films = project.films ?? (project.film ? [project.film] : []);
+  const notice = reviewNotice(project);
 
   return (
     <PageShell>
@@ -25,11 +27,11 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
       </header>
       <figure className="case-lead-image">
         <Image src={project.image} alt={project.alt} fill priority sizes="100vw" style={{ objectFit: "contain", background: "var(--paper)" }} />
-        <figcaption>{project.mediaNotice}</figcaption>
+        {notice ? <figcaption>{notice}</figcaption> : null}
       </figure>
       <section className="case-facts" aria-label="Project facts">
         <div><span>Channels</span><p>{project.channels}</p></div>
-        <div><span>First Rec. role</span><p>{project.role}</p></div>
+        <div><span>First Rec. role</span><p>{withoutReviewNotes(project.role)}</p></div>
         {project.mediaPartner ? <div><span>Media partner</span><p>{project.mediaPartner}</p></div> : null}
         {project.date ? <div><span>Date</span><p>{project.date}</p></div> : null}
       </section>
@@ -43,7 +45,7 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
           <div className="case-film-heading">
             <p className="eyebrow">Selected film</p>
             <h2 id={`${project.slug}-film-heading`}>The project in motion.</h2>
-            <p>{project.mediaNotice}</p>
+            {notice ? <p>{notice}</p> : null}
           </div>
           <div className={`case-film-list${films.length > 1 ? " case-film-list--multiple" : ""}`}>
             {films.map((film, index) => (

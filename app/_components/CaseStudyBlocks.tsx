@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { isListed } from "../_data/publication";
+import { reviewNotice } from "../_data/review-notice";
 import { caseStudies, type CaseStudy } from "../_data/site";
 
 type CaseImage = { image: string; alt: string; ratio?: string };
@@ -57,7 +58,7 @@ function HeroBlock({ block, project, number }: { block: Extract<CaseStudyBlock, 
 function FullImageBlock({ block, project, first }: { block: Extract<CaseStudyBlock, { type: "fullImage" }>; project: CaseStudy; first: boolean }) {
   const image = block.image ?? project.image;
   const alt = block.alt ?? project.alt;
-  const caption = block.caption ?? (block.image ? undefined : project.mediaNotice);
+  const caption = block.caption ?? (block.image ? undefined : reviewNotice(project));
   return (
     <figure className={`case-lead-image${block.ratio ? " case-lead-image--ratio" : ""}`} style={block.ratio ? { aspectRatio: block.ratio } : undefined}>
       <Image src={image} alt={alt} fill priority={first} sizes="100vw" style={{ objectFit: "contain", background: "var(--paper)" }} />
@@ -110,7 +111,7 @@ function TwoColumnBlock({ block }: { block: Extract<CaseStudyBlock, { type: "two
 function VideoBlock({ block, project, id }: { block: Extract<CaseStudyBlock, { type: "video" }>; project: CaseStudy; id: string }) {
   const films = block.films ?? filmsFor(project);
   if (!films.length) return null;
-  const note = block.note ?? project.mediaNotice;
+  const note = block.note ?? reviewNotice(project);
   return (
     <section className="case-film" aria-labelledby={id}>
       <div className="case-film-heading">

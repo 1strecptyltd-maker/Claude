@@ -290,7 +290,9 @@ footer p { margin: 0; color: var(--muted); font-size: .68rem; letter-spacing: .0
 @media (max-width: 767px) {
   :root { --page-x: 1.25rem; --section-y: 6rem; }
   .site-header { height: 64px; }
-  .wordmark { width: 128px; height: 39px; }
+  /* Logo stays 128px wide; the link box grows to a 44px tap target around it. */
+  .wordmark { width: 128px; height: 44px; }
+  .work-entry-copy h3 a { display: inline-flex; align-items: center; min-height: 44px; }
   .desktop-nav { display: none; }
   .mobile-menu { display: block; position: relative; }
   .mobile-menu summary { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: flex-end; list-style: none; cursor: pointer; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
