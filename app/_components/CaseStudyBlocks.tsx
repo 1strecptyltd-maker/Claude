@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { isListed } from "../_data/publication";
 import { caseStudies, type CaseStudy } from "../_data/site";
 
 type CaseImage = { image: string; alt: string; ratio?: string };
@@ -85,6 +86,11 @@ function FactsBlock({ block }: { block: Extract<CaseStudyBlock, { type: "facts" 
   );
 }
 
+// The label is the column's section heading; a column heading sits beneath it, or takes its level when there is no label.
+function ColumnHeading({ labelled, children }: { labelled: boolean; children: string }) {
+  return labelled ? <h3 className="case-block-columns-heading">{children}</h3> : <h2 className="case-block-columns-heading">{children}</h2>;
+}
+
 function TwoColumnBlock({ block }: { block: Extract<CaseStudyBlock, { type: "twoColumn" }> }) {
   const columns = block.columns.filter((column) => known(column.text));
   if (!columns.length) return null;
@@ -92,8 +98,8 @@ function TwoColumnBlock({ block }: { block: Extract<CaseStudyBlock, { type: "two
     <section className="case-block-columns">
       {columns.map((column, index) => (
         <article key={index}>
-          {known(column.label) ? <p>{column.label}</p> : null}
-          {known(column.heading) ? <h2>{column.heading}</h2> : null}
+          {known(column.label) ? <h2 className="case-block-columns-label">{column.label}</h2> : null}
+          {known(column.heading) ? <ColumnHeading labelled={known(column.label)}>{column.heading}</ColumnHeading> : null}
           <p className="case-block-columns-text">{column.text}</p>
         </article>
       ))}
@@ -184,8 +190,9 @@ function BtsBlock({ block, id }: { block: Extract<CaseStudyBlock, { type: "bts" 
 }
 
 function NextBlock({ block }: { block: Extract<CaseStudyBlock, { type: "next" }> }) {
+  // Only link to a case this build exports; an internal-review target has no page in a public build.
   const next = caseStudies.find((item) => item.slug === block.slug);
-  if (!next) return null;
+  if (!next || !isListed(next.slug)) return null;
   return (
     <nav className="case-block-next" aria-label="Next project">
       <p className="eyebrow">{block.label ?? "Next project"}</p>

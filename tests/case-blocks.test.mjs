@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
@@ -64,4 +65,45 @@ test("legacy cases without blocks still render the fixed template", async () => 
     assert.match(html, /01 \/ Context/);
     assert.doesNotMatch(html, /case-block-/);
   }
+});
+
+const exported = (slug) => existsSync(new URL(`../dist/client/work/${slug}/index.html`, import.meta.url));
+
+// Case pages this build exported, whether public only or the internal preview.
+async function exportedCases() {
+  const entries = await readdir(new URL("../dist/client/work/", import.meta.url), { withFileTypes: true });
+  return entries.filter((entry) => entry.isDirectory() && exported(entry.name)).map((entry) => entry.name);
+}
+
+test("two-column labels are section headings and case pages never skip a heading level", async () => {
+  const html = body(await read("work/spin-panda/index.html"));
+  const columns = html.match(/<section class="case-block-columns"[^>]*>([\s\S]*?)<\/section>/);
+  assert.ok(columns, "two-column block is rendered");
+  assert.match(columns[1], /<h2[^>]*>02 \/ Response<\/h2>/);
+  assert.match(columns[1], /<h2[^>]*>03 \/ Value<\/h2>/);
+
+  for (const slug of await exportedCases()) {
+    const levels = [...body(await read(`work/${slug}/index.html`)).matchAll(/<h([1-6])\b/g)].map(([, level]) => Number(level));
+    assert.equal(levels[0], 1, `work/${slug}/ starts with an h1`);
+    levels.forEach((level, index) => {
+      if (index) assert.ok(level <= levels[index - 1] + 1, `work/${slug}/ skips from h${levels[index - 1]} to h${level}`);
+    });
+  }
+});
+
+test("next-project links only point to case pages this build exports", async () => {
+  const source = await readFile(new URL("../app/_components/CaseStudyBlocks.tsx", import.meta.url), "utf8");
+  assert.match(source, /function NextBlock[\s\S]*?!isListed\(next\.slug\)\) return null/);
+
+  let links = 0;
+  for (const slug of await exportedCases()) {
+    const html = body(await read(`work/${slug}/index.html`));
+    for (const [, nav] of html.matchAll(/<nav class="case-block-next"[^>]*>([\s\S]*?)<\/nav>/g)) {
+      for (const [, target] of nav.matchAll(/href="\/work\/([^"]+)\/"/g)) {
+        links += 1;
+        assert.ok(exported(target), `work/${slug}/ links to work/${target}/, which this build does not export`);
+      }
+    }
+  }
+  assert.ok(links > 0, "at least one next-project link is rendered");
 });
