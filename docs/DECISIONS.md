@@ -41,3 +41,10 @@
 - 不把真实照片、视频拷进仓库或云端开发环境。开发时运行 `npm run media:placeholders`，给 `app/_data/site.ts` 引用但本地缺失的每个文件生成占位：图片按数据里的比例，视频是几 KB 的 H.264 短片，画面写着 PLACEHOLDER。已有文件不会被覆盖；`npm run media:placeholders:clean` 只删除带标记的占位文件。
 - 每个占位文件都嵌了 `FIRST-REC-PLACEHOLDER` 标记；`npm run check:public` 发现标记就报错，不让上线（预览可加 `--allow-placeholders` 降为警告）。占位文件所在路径都已在 `.gitignore` 里，不会被提交。
 - 开发完成后，创始人在 NAS 上部署时把真实素材放进 `public/portfolio/` 对应位置，重新构建，`check:public` 不加 `--allow-*` 通过后再上线。
+
+### 案例文案：按 2026-10-31 草稿替换
+
+- 创始人 2026-10-31 确认 `docs/COPY-DRAFTS-2026-10-31.md` 的新文案，已替换到 `app/_data/site.ts`、`app/about/page.tsx`。
+- Dr. LeWinn's：品牌直接委托，没有代理；First Rec. 负责制作与后期；周年影片用了一部分素材库素材，客户提供的素材基本没用。三支影片（含周年影片）都交付了带字幕和无字幕两个版本。
+- Spin Panda：Starlink 统一称为 "agency partner"（不用 "media partner" / "media intermediary"），包括页面上的标签。
+- 草稿里列出的其他问题（展会名称、日期、委托关系等）还没回答，新文案没有写这些内容。

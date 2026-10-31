@@ -116,9 +116,10 @@ DEPLOY="/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio"
    STAMP=$(date +%Y%m%d-%H%M%S); echo "$STAMP"
    ```
 
-2. On the NAS, back up the live export and config. On the very first deploy, before `deploy/nas-swap.sh` exists on the NAS, upload `deploy/` first (step 3) and then run `backup`:
+2. On the NAS, back up the live export and config. On the very first deploy, before `deploy/nas-swap.sh` exists on the NAS, upload only the script itself from the build machine first and then run `backup` (`NAS` and `REMOTE` are defined as in step 3):
 
    ```sh
+   COPYFILE_DISABLE=1 tar -cf - deploy/nas-swap.sh | ssh "$NAS" "tar -C '$REMOTE' -xf -"
    sudo bash deploy/nas-swap.sh backup "$DEPLOY" <STAMP>
    ```
 

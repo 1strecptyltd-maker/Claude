@@ -1,4 +1,5 @@
 # 案例文案草稿（2026-10-31，待创始人确认）
+> 2026-10-31 已按创始人确认替换到网站（Spin Panda 的 Starlink 改称 "agency partner"）；决定记录在 docs/DECISIONS.md。
 
 原来的英文介绍是整理素材时写的说明（比如 "The supplied archive contains 187 photographs"、"public credits remain unconfirmed"），不适合给访客看。下面是重写草稿：只用项目记录里已有的事实（`app/_data/site.ts`、`docs/PORTFOLIO-INGESTION-*.md`、handoff 文档），没有编造日期、场地、客户评价或效果；一个 AI 逐句核对了事实来源，另一个 AI 改了英文语气，最后合并修订。**还没有换到网站上。**
 

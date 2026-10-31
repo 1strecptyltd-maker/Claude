@@ -18,7 +18,7 @@ export default function AboutPage() {
         </div>
       </header>
       <section className="about-story">
-        <p className="story-lead">First Rec. is founded by Cheese.</p>
+        <p className="story-lead">First Rec. was founded by Cheese.</p>
         <div>
           <p>Cheese is the founder behind the studio: a direct, human point of contact from the first brief through to delivery.</p>
           <p>More than five years of production experience helps First Rec. identify what matters, adapt when the brief changes and control costs without losing sight of the final work.</p>

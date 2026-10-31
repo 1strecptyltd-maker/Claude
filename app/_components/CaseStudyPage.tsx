@@ -32,7 +32,7 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
       <section className="case-facts" aria-label="Project facts">
         <div><span>Channels</span><p>{project.channels}</p></div>
         <div><span>First Rec. role</span><p>{withoutReviewNotes(project.role)}</p></div>
-        {project.mediaPartner ? <div><span>Media partner</span><p>{project.mediaPartner}</p></div> : null}
+        {project.mediaPartner ? <div><span>Agency partner</span><p>{project.mediaPartner}</p></div> : null}
         {project.date ? <div><span>Date</span><p>{project.date}</p></div> : null}
       </section>
       <section className="case-story">
