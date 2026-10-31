@@ -1,4 +1,4 @@
-import type { CaseStudyBlock } from "../_components/CaseStudyBlocks";
+import type { CaseFilm, CaseStudyBlock } from "../_components/CaseStudyBlocks";
 
 export type CaseStudy = {
   slug: string;
@@ -22,18 +22,8 @@ export type CaseStudy = {
     alt: string;
     ratio?: string;
   }>;
-  film?: {
-    src: string;
-    poster: string;
-    title: string;
-    type?: string;
-  };
-  films?: Array<{
-    src: string;
-    poster: string;
-    title: string;
-    type?: string;
-  }>;
+  film?: CaseFilm;
+  films?: CaseFilm[];
   /** Optional modular layout. When present, CaseStudyPage renders these blocks instead of the fixed template. */
   blocks?: CaseStudyBlock[];
 };
@@ -100,10 +90,12 @@ export const caseStudies: CaseStudy[] = [
     role: "Cinematography / Post-production",
     mediaNotice: "Internal review assets / Project details and publication clearance pending",
     film: {
-      src: "/portfolio/molly-tea/opening-film.mov",
+      src: "/portfolio/molly-tea/opening-film.mp4",
       poster: "/portfolio/molly-tea/hero.jpg",
       title: "Molly Tea opening film",
-      type: "video/quicktime",
+      type: "video/mp4",
+      // Transcoded H.264/AAC cut for Chromium/Firefox; the original QuickTime file stays as a Safari fallback (HANDOFF §6c).
+      fallbacks: [{ src: "/portfolio/molly-tea/opening-film.mov", type: "video/quicktime" }],
     },
   },
   {

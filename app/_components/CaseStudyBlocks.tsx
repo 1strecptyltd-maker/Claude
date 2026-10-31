@@ -2,7 +2,9 @@ import Image from "next/image";
 import { caseStudies, type CaseStudy } from "../_data/site";
 
 type CaseImage = { image: string; alt: string; ratio?: string };
-type CaseFilm = { src: string; poster: string; title: string; type?: string };
+// `src`/`type` is the primary source; `fallbacks` follow it in order, so list the
+// most widely playable format (H.264 MP4) first.
+export type CaseFilm = { src: string; poster: string; title: string; type?: string; fallbacks?: Array<{ src: string; type: string }> };
 
 // Content blocks for modular case studies. Blocks that mirror core case fields
 // (hero, full-width lead image, video, gallery) fall back to the case's own data.
@@ -31,6 +33,16 @@ function filmsFor(project: CaseStudy) {
   return project.films ?? (project.film ? [project.film] : []);
 }
 
+export function FilmVideo({ film }: { film: CaseFilm }) {
+  const sources = [{ src: film.src, type: film.type ?? "video/mp4" }, ...(film.fallbacks ?? [])];
+  return (
+    <video controls muted playsInline preload="metadata" poster={film.poster} aria-label={film.title}>
+      {sources.map((source) => <source key={source.src} src={source.src} type={source.type} />)}
+      Your browser does not support embedded video.
+    </video>
+  );
+}
+
 function HeroBlock({ block, project, number }: { block: Extract<CaseStudyBlock, { type: "hero" }>; project: CaseStudy; number: string }) {
   const summary = block.summary ?? project.summary;
   return (
@@ -57,8 +69,8 @@ function IntroBlock({ block }: { block: Extract<CaseStudyBlock, { type: "intro" 
   if (!known(block.text)) return null;
   return (
     <section className="case-block-intro">
-      {known(block.label) ? <p>{block.label}</p> : null}
-      <h2>{block.text}</h2>
+      {known(block.label) ? <h2>{block.label}</h2> : null}
+      <p>{block.text}</p>
     </section>
   );
 }
@@ -104,10 +116,7 @@ function VideoBlock({ block, project, id }: { block: Extract<CaseStudyBlock, { t
         {films.map((film, index) => (
           <figure className="case-film-item" key={film.src}>
             {films.length > 1 ? <figcaption><span>{String(index + 1).padStart(2, "0")} / Film</span><strong>{film.title}</strong></figcaption> : null}
-            <video controls muted playsInline preload="metadata" poster={film.poster} aria-label={film.title}>
-              <source src={film.src} type={film.type ?? "video/mp4"} />
-              Your browser does not support embedded video.
-            </video>
+            <FilmVideo film={film} />
           </figure>
         ))}
       </div>

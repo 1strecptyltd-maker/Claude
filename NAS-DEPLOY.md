@@ -64,4 +64,23 @@ After replacing `dist/client/` on the NAS, apply the deployment from the NAS dir
 sudo /usr/bin/docker compose -f compose.truenas.yaml up -d
 ```
 
-The TrueNAS-specific Compose file mounts the prebuilt static export read-only into Nginx. It deliberately reuses the former WordPress port so the existing Nginx Proxy Manager route does not need to change.
+The TrueNAS-specific Compose file mounts the prebuilt static export read-only into Nginx, together with `deploy/nginx.conf` (also read-only). It deliberately reuses the former WordPress port so the existing Nginx Proxy Manager route does not need to change.
+
+### Nginx config (`deploy/nginx.conf`)
+
+Both `compose.truenas.yaml` (mounted) and the `Dockerfile` (copied) replace the image's default `/etc/nginx/conf.d/default.conf` with `deploy/nginx.conf`. It:
+
+- serves clean URLs with `try_files $uri $uri/ =404;` (a directory without a trailing slash gets a 301 to the slash, then `index.html`);
+- keeps that redirect relative (`absolute_redirect off`), so `/work` → `/work/` stays on the public https host instead of pointing at `http://` behind the proxy;
+- returns the branded `404.html` with a real 404 status (`error_page 404 /404.html;`) instead of Nginx's default error page;
+- caches content-hashed `/_next/static/` files immutably.
+
+**Copy `deploy/nginx.conf` to the NAS deployment directory** (next to `compose.truenas.yaml`) before running `docker compose up -d`. If the file is missing, Docker creates an empty directory at that path and Nginx fails to start.
+
+Check after deploying (from the LAN):
+
+```sh
+curl -sI http://192.168.74.200:30040/work/nvidia/ | head -1   # 200
+curl -sI http://192.168.74.200:30040/work | grep -i location  # Location: /work/
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.74.200:30040/nope/  # 404, page title "Page not found | First Rec."
+```

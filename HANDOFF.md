@@ -42,7 +42,7 @@ npm run build                 # vinext build + scripts/normalize-static-export.m
 | 公网地址 | `https://www.firstrec.work`（裸域 `firstrec.work` 2026-10-17 实测无解析） |
 | 源站 | `http://192.168.74.200:30040`（局域网） |
 | NAS 部署目录 | `/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio` |
-| Compose 文件 | `compose.truenas.yaml`：`nginx:1.27-alpine`，端口 `30040:80`，把 `./dist/client` 只读挂载到 `/usr/share/nginx/html` |
+| Compose 文件 | `compose.truenas.yaml`：`nginx:1.27-alpine`，端口 `30040:80`，把 `./dist/client` 只读挂载到 `/usr/share/nginx/html`，`./deploy/nginx.conf` 只读挂载为 `default.conf`（干净 URL + 品牌 404，见 `NAS-DEPLOY.md`） |
 | 是否用 Docker | **是**，但只用来跑 Nginx；静态文件在 Mac 上构建好再拷过去，NAS 上不构建 |
 | `firstrec.com.au` | GoDaddy DNS，用 frameset **框架嵌入** `www.firstrec.work`（不是 301） |
 | 线上内容 | 仍是 2026-08-13 的旧版（8 个案例）；本地/仓库是 36 个案例，**尚未上线** |
@@ -57,6 +57,7 @@ npm run lint
 
 # 2. 先备份 NAS 上现有的 dist/client、compose 和代理配置，再把新的 dist/client/ 传到
 #    /mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio/dist/client/
+#    同时把 compose.truenas.yaml 和 deploy/nginx.conf 传到部署目录（缺 nginx.conf 时 Nginx 起不来）
 
 # 3. 在 NAS 部署目录执行
 sudo /usr/bin/docker compose -f compose.truenas.yaml up -d
@@ -123,6 +124,7 @@ Worker 模板里的 `env.ASSETS` / `env.IMAGES` / `env.DB` 是 Cloudflare bindin
 
 | 路径 | 大小 |
 | --- | --- |
+| `public/portfolio/molly-tea/opening-film.mp4` | 尚不存在，需从 `.mov` 转码（见下方） |
 | `public/portfolio/molly-tea/opening-film.mov` | 109 MB |
 | `public/portfolio/spin-panda/film.mp4` | 50.4 MB |
 | `public/portfolio/indiba-icc/film.mp4` | 28.9 MB |
@@ -134,6 +136,18 @@ Worker 模板里的 `env.ASSETS` / `env.IMAGES` / `env.DB` 是 Cloudflare bindin
 | `public/portfolio/dr-lewinn/anniversary-film.mp4` | 12.4 MB |
 
 测试只检查 HTML 里有没有这些路径字符串，不检查文件本身，所以缺视频不影响 `npm test` 通过。
+
+**Molly Tea 转码（QA H2）**：`opening-film.mov` 是 QuickTime 格式，Chrome / Edge / Android / 多数 Firefox 不播放，而且 109 MB 太大。页面现在先给 `opening-film.mp4`（`video/mp4`），`.mov` 只作 Safari 兜底（`app/_data/site.ts` 的 `fallbacks`）。创始人在 Mac 上、`public/portfolio/molly-tea/` 目录里跑一次（`brew install ffmpeg`）：
+
+```sh
+ffmpeg -i opening-film.mov \
+  -c:v libx264 -preset slow -crf 23 -maxrate 6M -bufsize 12M \
+  -vf "scale='min(1920,iw)':-2" -pix_fmt yuv420p -profile:v high \
+  -c:a aac -b:a 128k -movflags +faststart \
+  opening-film.mp4
+```
+
+目标体积与其他片子相近（约 15–30 MB）；超过 30 MB 就把 `-crf` 调到 25–26 再跑一次。H.264 + `yuv420p` + `faststart` 保证所有浏览器能播、能边下边播。MP4 就位后 `.mov` 可以不再部署：能播 MP4 的浏览器不会去请求后面的 `.mov`。
 
 另外没进 Git 的：`node_modules/`、`dist/`、`.next/`、`.vinext/`、`.wrangler/`、`outputs/`、`work/`（旧 ZIP/备份/缓存），以及 Mac 上的原片、原图（在 NAS / Google Drive）。
 

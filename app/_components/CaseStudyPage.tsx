@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { CaseStudyBlocks } from "./CaseStudyBlocks";
+import { CaseStudyBlocks, FilmVideo } from "./CaseStudyBlocks";
 import { ContactBand } from "./ContactBand";
 import { PageShell } from "./PageShell";
 import type { CaseStudy } from "../_data/site";
@@ -34,9 +34,9 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
         {project.date ? <div><span>Date</span><p>{project.date}</p></div> : null}
       </section>
       <section className="case-story">
-        <article><p>01 / Context</p><h2>{project.challenge}</h2></article>
-        <article><p>02 / Response</p><h2>{project.response}</h2></article>
-        <article><p>03 / Value</p><h2>{project.outcome}</h2></article>
+        <article><h2>01 / Context</h2><p>{project.challenge}</p></article>
+        <article><h2>02 / Response</h2><p>{project.response}</p></article>
+        <article><h2>03 / Value</h2><p>{project.outcome}</p></article>
       </section>
       {films.length ? (
         <section className="case-film" aria-labelledby={`${project.slug}-film-heading`}>
@@ -49,10 +49,7 @@ export function CaseStudyPage({ project, number }: { project: CaseStudy; number:
             {films.map((film, index) => (
               <figure className="case-film-item" key={film.src}>
                 {films.length > 1 ? <figcaption><span>{String(index + 1).padStart(2, "0")} / Film</span><strong>{film.title}</strong></figcaption> : null}
-                <video controls muted playsInline preload="metadata" poster={film.poster} aria-label={film.title}>
-                  <source src={film.src} type={film.type ?? "video/mp4"} />
-                  Your browser does not support embedded video.
-                </video>
+                <FilmVideo film={film} />
               </figure>
             ))}
           </div>

@@ -17,7 +17,7 @@ export function SiteHeader() {
         {navigation.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
       </nav>
       <details className="mobile-menu">
-        <summary aria-label="Open navigation">Menu</summary>
+        <summary>Menu</summary>
         <nav aria-label="Mobile navigation">
           {navigation.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
         </nav>

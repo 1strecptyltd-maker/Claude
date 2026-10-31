@@ -10,5 +10,6 @@ COPY . .
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/client /usr/share/nginx/html
 EXPOSE 80
