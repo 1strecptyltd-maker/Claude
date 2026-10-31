@@ -4,7 +4,13 @@ The site exports as plain static files. It can be hosted by Synology Web Station
 
 ## Option 1: upload the static folder
 
-1. Run `npm ci` and then `npm run build` on a computer with Node.js 22.13 or newer.
+1. Run `npm ci` on a computer with Node.js 22.13 or newer, then build the public export and run the pre-upload check before uploading:
+
+   ```sh
+   env -u FIRST_REC_INCLUDE_INTERNAL NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm run build
+   npm run check:public -- --expect-site-url=https://www.firstrec.work
+   ```
+
 2. Upload everything inside `dist/client/` to the web root on the NAS.
 3. Point the NAS web service or reverse proxy at that folder.
 
@@ -27,8 +33,8 @@ npm run check:public -- --expect-site-url=https://www.firstrec.work
 
 ## Option 2: Docker Compose
 
-1. Copy the complete project folder to the NAS.
-2. Copy `.env.example` to `.env` and set the final public URL and contact email.
+1. Copy the complete project folder to the NAS. The approved portfolio media must already be in `public/portfolio/`: the image build runs `npm run check:public`, so it fails exactly when a manual upload would (missing videos, placeholders, internal-review cases).
+2. Copy `.env.example` to `.env` and set `NEXT_PUBLIC_SITE_URL` to the final public https URL and `NEXT_PUBLIC_CONTACT_EMAIL` to the contact email. Compose now refuses to start without `NEXT_PUBLIC_SITE_URL` (`Set NEXT_PUBLIC_SITE_URL in .env to the public https URL`), and the Docker build itself fails when the value is empty, so the image can no longer be built with development defaults baked into its metadata.
 3. Run:
 
    ```sh
@@ -98,53 +104,56 @@ State on 2026-10-31 (public build from this repository after U3, with `NEXT_PUBL
 
 ### Upload with backup and rollback
 
-On the NAS, from a shell with sudo (paths contain a space, keep the quotes):
+The swap is scripted: `deploy/nas-swap.sh` verifies every precondition before it moves anything, moves the old export aside with the same stamp throughout, and prints the exact rollback command if the container restart fails. Run it on the NAS from a shell with sudo (paths contain a space, keep the quotes):
 
 ```sh
 DEPLOY="/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio"
-STAMP=$(date +%Y%m%d-%H%M%S)
-cd "$DEPLOY"
-
-# 1. Back up the live export and compose file.
-sudo cp -a dist/client "dist/client.bak-$STAMP"
-sudo cp -a compose.truenas.yaml "compose.truenas.yaml.bak-$STAMP"
-[ -f deploy/nginx.conf ] && sudo cp -a deploy/nginx.conf "deploy/nginx.conf.bak-$STAMP"  # absent on the first deploy with it
 ```
 
-From the build machine, upload the checked export into a new sibling folder, not over the live one (`<nas-user>@<nas-host>` is whatever SSH login the NAS uses; any copy method that preserves the folder works):
+1. On the Mac, create the release stamp **once** and write it down. Every later step uses this same value, typed out on the NAS:
 
-```sh
-rsync -a --delete dist/client/ "<nas-user>@<nas-host>:/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio/dist/client.new-<STAMP>/"
-rsync -a compose.truenas.yaml deploy "<nas-user>@<nas-host>:/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio/"  # compose + deploy/nginx.conf
-```
+   ```sh
+   STAMP=$(date +%Y%m%d-%H%M%S); echo "$STAMP"
+   ```
 
-Back on the NAS, swap the folders and recreate the container. `--force-recreate` is required: the bind mount follows the original folder, so a plain `up -d` would keep serving the renamed old export.
+2. On the NAS, back up the live export and config. On the very first deploy, before `deploy/nas-swap.sh` exists on the NAS, upload `deploy/` first (step 3) and then run `backup`:
 
-```sh
-# 2. Swap in the new export.
-sudo mv dist/client "dist/client.prev-$STAMP"
-sudo mv "dist/client.new-$STAMP" dist/client
-sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
+   ```sh
+   sudo bash deploy/nas-swap.sh backup "$DEPLOY" <STAMP>
+   ```
 
-# 3. Verify against the origin (expect 200, 200, 200, 404 and the https OG domain).
-for p in / /work/ /contact/ /work/nvidia/ /does-not-exist/; do
-  printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:30040$p")" "$p"
-done
-curl -s http://127.0.0.1:30040/ | grep -o 'og:image" content="[^"]*"'
-```
+3. From the build machine, upload the checked export with tar over ssh instead of rsync (macOS ships openrsync, which splits the remote path at the space; quoting the path inside the remote command keeps it intact, and `COPYFILE_DISABLE=1` stops macOS resource-fork `._*` files):
 
-Then check `https://www.firstrec.work` in a browser: home, a case page with images and video, the contact email and a missing URL.
+   ```sh
+   NAS=<nas-user>@<nas-host>
+   REMOTE="/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio"
+   COPYFILE_DISABLE=1 tar -C dist/client -cf - . | ssh "$NAS" "mkdir -p '$REMOTE/dist/client.new-$STAMP' && tar -C '$REMOTE/dist/client.new-$STAMP' -xf -"
+   COPYFILE_DISABLE=1 tar -cf - compose.truenas.yaml deploy | ssh "$NAS" "tar -C '$REMOTE' -xf -"
+   ```
 
-```sh
-# 4. Roll back if any check fails.
-sudo mv dist/client "dist/client.failed-$STAMP"
-sudo mv "dist/client.prev-$STAMP" dist/client
-sudo cp -a "compose.truenas.yaml.bak-$STAMP" compose.truenas.yaml
-[ -f "deploy/nginx.conf.bak-$STAMP" ] && sudo cp -a "deploy/nginx.conf.bak-$STAMP" deploy/nginx.conf
-sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
-```
+   The second command uploads `compose.truenas.yaml` and `deploy/` (the nginx config and the swap script itself). Use the stamp from step 1 for `$STAMP`.
 
-Keep `dist/client.bak-$STAMP` until the new release has been verified; it is an independent copy if the swap folders get mixed up.
+4. On the NAS, swap in the new export and verify. `--force-recreate` is required: the bind mount follows the original folder, so a plain `up -d` would keep serving the renamed old export. The script refuses to touch anything unless `dist/client.new-<STAMP>/` has both `index.html` and `404.html`, `deploy/nginx.conf` is a regular file, and no `dist/client.prev-<STAMP>` is left over:
+
+   ```sh
+   sudo bash deploy/nas-swap.sh swap "$DEPLOY" <STAMP>
+
+   # Verify against the origin (expect 200, 200, 200, 404 and the https OG domain).
+   for p in / /work/ /contact/ /work/nvidia/ /does-not-exist/; do
+     printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:30040$p")" "$p"
+   done
+   curl -s http://127.0.0.1:30040/ | grep -o 'og:image" content="[^"]*"'
+   ```
+
+   Then check `https://www.firstrec.work` in a browser: home, a case page with images and video, the contact email and a missing URL.
+
+5. Roll back if any check fails (`swap` prints this exact command when the container restart fails):
+
+   ```sh
+   sudo bash deploy/nas-swap.sh rollback "$DEPLOY" <STAMP>
+   ```
+
+Keep `dist/client.bak-<STAMP>` until the new release has been verified; it is an independent copy if the swap folders get mixed up.
 
 The TrueNAS-specific Compose file mounts the prebuilt static export read-only into Nginx, together with `deploy/nginx.conf` (also read-only). It deliberately reuses the former WordPress port so the existing Nginx Proxy Manager route does not need to change.
 
@@ -157,7 +166,8 @@ Both `compose.truenas.yaml` (mounted) and the `Dockerfile` (copied) replace the 
 - returns the branded `404.html` with a real 404 status (`error_page 404 /404.html;`) instead of Nginx's default error page;
 - answers a directory without `index.html` (such as `/portfolio/nvidia/`) with the same branded 404 instead of Nginx's stock 403 (`error_page 403 =404 /404.html;`);
 - hides the Nginx version in the `Server` header and on its built-in pages such as the 301 body (`server_tokens off;`);
-- caches content-hashed `/_next/static/` files immutably.
+- caches content-hashed `/_next/static/` files immutably;
+- sends `Cache-Control: no-cache` for HTML pages and `.rsc` payloads, which are not content-hashed, so browsers revalidate them after a deploy instead of keeping the previous release.
 
 **Copy `deploy/nginx.conf` to the NAS deployment directory** (next to `compose.truenas.yaml`) before running `docker compose up -d`. If the file is missing, Docker creates an empty directory at that path and Nginx fails to start.
 
