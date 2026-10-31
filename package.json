@@ -14,7 +14,9 @@
     "check:public": "node scripts/check-public-build.mjs",
     "db:generate": "drizzle-kit generate",
     "build:internal": "FIRST_REC_INCLUDE_INTERNAL=1 npm run build",
-    "test:internal": "FIRST_REC_INCLUDE_INTERNAL=1 npm test"
+    "test:internal": "FIRST_REC_INCLUDE_INTERNAL=1 npm test",
+    "media:placeholders": "node scripts/generate-placeholder-media.mjs",
+    "media:placeholders:clean": "node scripts/generate-placeholder-media.mjs --clean"
   },
   "dependencies": {
     "@fontsource-variable/newsreader": "^5.3.0",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
     "react-server-dom-webpack": "19.2.6",
+    "sharp": "0.34.5",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",

@@ -7,9 +7,11 @@
 //   --allow-default-email        Do not fail on the old default hello@cheese.studio address.
 //   --expect-site-url=URL        Require this one origin instead of either production origin.
 //   --expect-email=ADDRESS       Require this contact address instead of info@firstrec.com.au.
+//   --allow-placeholders         Downgrade generated placeholder media to warnings (preview builds only).
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PLACEHOLDER_MARKER } from "./placeholder-marker.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -43,11 +45,12 @@ const leakPatterns = [
 ];
 
 export function parseArgs(argv) {
-  const options = { exportDir: path.join(projectRoot, "dist", "client"), allowMissingMedia: null, allowDefaultEmail: false, siteOrigins: productionSiteOrigins, contactEmail: expectedContactEmail };
+  const options = { exportDir: path.join(projectRoot, "dist", "client"), allowMissingMedia: null, allowDefaultEmail: false, allowPlaceholders: false, siteOrigins: productionSiteOrigins, contactEmail: expectedContactEmail };
   for (const arg of argv) {
     if (arg === "--allow-missing-media") options.allowMissingMedia = knownMissingMedia;
     else if (arg.startsWith("--allow-missing-media=")) options.allowMissingMedia = arg.slice(arg.indexOf("=") + 1).split(",").filter(Boolean);
     else if (arg === "--allow-default-email") options.allowDefaultEmail = true;
+    else if (arg === "--allow-placeholders") options.allowPlaceholders = true;
     else if (arg.startsWith("--expect-site-url=")) options.siteOrigins = [new URL(arg.slice(arg.indexOf("=") + 1)).origin];
     else if (arg.startsWith("--expect-email=")) options.contactEmail = arg.slice(arg.indexOf("=") + 1);
     else if (arg.startsWith("--")) throw new Error(`Unknown option ${arg}`);
@@ -244,6 +247,16 @@ export async function checkPublicBuild(options) {
     if (address !== contactEmail && address !== defaultEmail) add(errors, "contact-email", [...referrers][0], `mailto:${address} in ${referrers.size} file(s); expected ${contactEmail}`);
   }
   if (!mailtoFiles.has(contactEmail) && !options.allowDefaultEmail) add(errors, "contact-email", "*", `no mailto:${contactEmail} link found; set NEXT_PUBLIC_CONTACT_EMAIL=${contactEmail}`);
+
+  // Generated stand-ins (scripts/generate-placeholder-media.mjs) must be replaced with real media before upload.
+  const placeholders = [];
+  for (const file of files.filter((file) => file.startsWith("portfolio/") && !isText(file))) {
+    if ((await readFile(path.join(exportDir, file))).includes(PLACEHOLDER_MARKER)) placeholders.push(file);
+  }
+  if (placeholders.length > 0) {
+    const hint = options.allowPlaceholders ? "" : " (copy the real media into public/portfolio/, or pass --allow-placeholders for a preview)";
+    add(options.allowPlaceholders ? warnings : errors, "placeholder-media", placeholders[0], `${placeholders.length} generated placeholder file(s) in the export${hint}`);
+  }
 
   // NEXT_PUBLIC_SITE_URL is only visible through the absolute URLs it produces.
   if (siteOrigins.size === 0) add(errors, "site-url", "index.html", "no absolute og:image/og:url/canonical URL found; cannot confirm NEXT_PUBLIC_SITE_URL was set");
