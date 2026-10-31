@@ -109,6 +109,8 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
 ### 未完成 / 待做
 - 其余 30 个案例仍是 `"internal-review"`；`spin-panda`、`dr-lewinn` 已由创始人口头确认（2026-10-31），书面授权记录以后补进 `docs/`
 - **U4**：创始人选定首页 6–8 个精选和顺序、餐饮合并策略、文案定稿
+- **案例文案**：重写草稿（只用已有事实，附中文翻译和要问创始人的问题）在 `docs/COPY-DRAFTS-2026-10-31.md`，创始人确认后再替换 `app/_data/site.ts`
+- **排版细节**：2026-10-31 视觉检查剩下约 70 条（对比度、联系区块对齐、标题断行、图片间距、平板布局等），按文件分好组，见 `docs/LAYOUT-POLISH-BACKLOG-2026-10-31.md`；创始人决定暂缓
 - **QA 剩余项**：M4 后半（已公开案例仍显示 "Public display authorised / … to confirm" 这类 `mediaNotice`，需要改成面向访客的文案或不渲染）、L3（`/work/` 缩略图 `cover` 裁切，等设计决定）
 - **U5 剩余**：DNS 尚未统一，切换前仍按 `www.firstrec.work` 构建；线上旧版仍是 `hello@cheese.studio`，下次部署后替换。见 `docs/DECISIONS.md`
 - **上线前**：从 Mac 拷回第 6c 节的视频，`check:public` 不加 `--allow-*` 通过后再部署；`deploy/nginx.conf` 还没在 NAS 上跑过；`Dockerfile` 镜像构建没实测
