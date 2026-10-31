@@ -8,7 +8,7 @@ export const dynamic = "force-static";
 
 export default function ServicesPage() {
   return (
-    <PageShell>
+    <PageShell current="/services/">
       <header className="page-hero">
         <p className="eyebrow">Services</p>
         <h1>The right production,<br />not the biggest one.</h1>

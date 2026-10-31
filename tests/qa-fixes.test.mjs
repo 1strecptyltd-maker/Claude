@@ -45,7 +45,8 @@ test("Molly Tea offers an H.264 MP4 source before the QuickTime fallback", inter
 
 test("the mobile menu's accessible name is its visible label", async () => {
   const html = await read("index.html");
-  assert.match(html, /<summary>Menu<\/summary>/);
+  assert.match(html, /<summary><span class="menu-label-closed">Menu<\/span><span class="menu-label-open">Close<\/span><\/summary>/);
+  assert.doesNotMatch(html, /<summary[^>]*aria-label/);
 });
 
 test("nginx serves the branded 404 and both deploy paths use that config", async () => {
