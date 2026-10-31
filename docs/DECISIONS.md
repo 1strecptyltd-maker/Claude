@@ -7,7 +7,7 @@
 ### 联系邮箱：`info@firstrec.com.au`
 
 - 网站对外联系邮箱改为 `info@firstrec.com.au`，替换 `hello@cheese.studio`。
-- 已改：`app/_data/site.ts` 的默认值、`compose.yaml` 构建参数默认值、`.env.example`。
+- 已改：`app/_data/site.ts` 的默认值、`compose.yaml` 构建参数默认值、`Dockerfile` 的 `ARG NEXT_PUBLIC_CONTACT_EMAIL` 默认值、`.env.example`。
 - 线上旧版（2026-08-13 构建）仍显示 `hello@cheese.studio`，下次部署后才会更新。
 
 ### 正式域名：`firstrec.com.au`（暂缓切换）
@@ -25,3 +25,13 @@
 
 - 创始人尚未选定首页 6–8 个精选案例和顺序。
 - 在选定之前，精选位暂用已取得公开授权的案例按现有顺序填充，并在数据里标为占位（provisional），不代表最终选择。已授权案例不足 6 个时如实显示，不凑数。
+
+## 待创始人确认
+
+以下事项尚未决定，不代表已批准。决定后在上方按日期补一条记录，并删掉这里对应的条目。
+
+### `spin-panda`、`dr-lewinn` 的公开授权记录
+
+- 现状：这两个案例在 `app/_data/publication.ts` 里是 `"public"`，会进入公开构建。依据只有旧数据里原有的 "Public display authorised" 标记（`docs/HANDOFF-2026-10-17-CLAUDE.md` 第 5 节按该标记列为已授权）；`docs/` 里没有原始授权记录。另外 4 个公开案例（`indiba-icc`、`jo-loves`、`mm-karaoke`、`nvidia`）引用的是 `docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md` 里记录的公开展示指示。
+- 状态保持不变，等创始人决定；没有改动任何案例的发布状态。
+- 需要创始人：确认这两个案例可以公开展示，并提供授权记录（邮件、合同条款或书面确认，存入 `docs/` 后在 `evidence` 里引用）；或者决定先改回 `"internal-review"`。
