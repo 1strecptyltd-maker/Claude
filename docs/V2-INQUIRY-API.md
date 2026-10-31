@@ -16,7 +16,8 @@
 | --- | --- |
 | 对外联系邮箱是 `info@firstrec.com.au` | `docs/DECISIONS.md` 2026-10-31 |
 | 目标 canonical 域名是 `www.firstrec.com.au`；但 `.com.au`（DNS 在 GoDaddy）目前只是 frameset 嵌入 `www.firstrec.work`（DNS 在 Cloudflare）；两边 DNS 未统一，生产构建继续用 `.work` | `docs/DECISIONS.md`；handoff §2 |
-| 公共站是 `output: "export"` 纯静态导出，NAS 上 `nginx:1.27-alpine` 只读挂载 `dist/client`（`compose.truenas.yaml`，`30040:80`，用默认 Nginx 配置），前面是 Nginx Proxy Manager（NPM）和 Cloudflare 代理 | `NAS-DEPLOY.md`；`compose.truenas.yaml`；handoff §2 |
+| 公共站是 `output: "export"` 纯静态导出，NAS 上 `nginx:1.27-alpine` 只读挂载 `dist/client`（`compose.truenas.yaml`，`30040:80`），前面是 Nginx Proxy Manager（NPM）和 Cloudflare 代理 | `NAS-DEPLOY.md`；`compose.truenas.yaml`；handoff §2 |
+| 静态 Nginx **不用**镜像自带的默认配置：`compose.truenas.yaml`（只读挂载）和 `Dockerfile`（复制）都用仓库里的 `deploy/nginx.conf` 替换 `/etc/nginx/conf.d/default.conf`——`try_files $uri $uri/ =404`、`error_page 404 /404.html`、`error_page 403 =404 /404.html`、`absolute_redirect off`、`server_tokens off`。这份配置 2026-10-31 只在本地用 `nginx:1.27-alpine` 验证过，还没在 NAS 上跑过；NAS 当前实际运行的配置未登录核实 | `deploy/nginx.conf`；`NAS-DEPLOY.md`「Nginx config」；`HANDOFF.md` §3 / §4；handoff §2 |
 | NPM、Cloudflare 后台的实际配置**未经登录核实** | handoff §2「未解决的验证限制」 |
 | 当前 `app/contact/page.tsx` 只有一个 `mailto:` 链接和四条「Goal / Channels / Timing / Budget range」提示，没有表单 | `app/contact/page.tsx` |
 | 仓库里没有隐私政策页 | 2026-10-31 检查 `app/` 目录 |
@@ -26,7 +27,8 @@
 
 ## 1. 为什么不能放进静态导出
 
-- `output: "export"` 的产物只是 HTML / JS / CSS 文件，Nginx 只会对 `POST` 返回 405。handoff U9 草案里的 `app/api/inquiries/route.ts` 在静态导出下**不会运行**，也不会被 Nginx 调用。
+- `output: "export"` 的产物只是 HTML / JS / CSS 文件，静态 Nginx 只按路径返回文件，不会把请求交给任何程序。handoff U9 草案里的 `app/api/inquiries/route.ts` 在静态导出下**不会运行**，也不会被 Nginx 调用。
+- 没有 API 路由时，`POST /api/inquiries` 得到的是**品牌 404 页**，不是 405（2026-10-31 用 `nginx:1.27-alpine` + `deploy/nginx.conf` + 公开构建本地实测，JSON 和 urlencoded 请求体结果相同）：路径不存在 → `try_files $uri $uri/ =404` → `error_page 404 /404.html` 内部跳转到 `/404.html`（Nginx 在这一步把 `POST` 改成 `GET`）→ 状态 404，页面是「Page not found | First Rec.」，上面**没有** `info@firstrec.com.au`（只有导航里的 Contact）。只有 `POST` 到**已存在**的静态文件或带 `index.html` 的目录（如 `/contact/`、`/404.html`）才会得到 Nginx 自带的 405 页。
 - 因此 U9 的 API 必须是**独立的小服务**，公共站只放一个普通 HTML 表单（ADR D2 / D5）。
 - 本文明确**否决**在本仓库 `app/api/` 下实现询盘接口（否则会改变构建模式、破坏现有 NAS 部署）。API 代码放在独立目录或独立仓库（见开放问题 OQ-12）。
 
@@ -138,13 +140,28 @@ JSON 模式（`Accept: application/json` 或 JSON 请求）：
 
 所有响应都带 `request_id`（随机，不含个人信息），方便用户报错时引用，日志里也用它关联。
 
-**蜜罐命中**：返回 201 / 303 成功（不让机器人知道被识别），但**不写库或写入 `SPAM` 状态**（见 §7）。
+**蜜罐命中**：返回成功结果（JSON 模式 201，表单模式 303 到 `/contact/sent/`），不让机器人知道被识别，但**不写库或写入 `SPAM` 状态**（见 §7）。
 
-表单模式（无 JS，`application/x-www-form-urlencoded`）：
+表单模式（无 JS 的普通 HTML 表单提交，`application/x-www-form-urlencoded`；请求体是 JSON 或 `Accept` 含 `application/json` 时一律按上表的 JSON 模式回答）：
 
-- 成功 → `303 See Other`，`Location: /contact/sent/`（新增一个静态页，随公共站构建，是纯文案）。
-- 校验失败 / 限速 / 不可用 → `303`，`Location: /contact/error/?reason=<code>`；静态页根据 `reason` 显示对应文案，并始终显示 mailto 链接。**不把用户填写的内容放进 URL**（避免 PII 进日志和浏览器历史），因此无 JS 用户在校验失败时需要重新填写——这是有意的取舍，文案里要说明。
-- `reason` 只接受固定枚举值，静态页里不回显任意字符串（防 XSS）。
+- 每种结果都回 `303 See Other`，`Location` 是下表里**一种结果一个**的固定站内路径。每个路径都是随公共站构建的独立静态页，英文文案写死在页面里，都显示 mailto 链接；错误页另有返回 `/contact/` 的链接。
+- 不用一个 `/contact/error/?reason=<code>` 页按参数切换文案：公共站是静态导出，`deploy/nginx.conf` 只按路径返回文件、不看查询串（本地实测 `/contact/?reason=` 取不同值返回逐字节相同的页面）；按查询串换文案只能靠浏览器里的 JS，而走表单模式的恰恰是没有 JS 的访客，他们只会看到同一段通用文案。
+
+| 结果（`code`） | `Location` | 页面文案 |
+| --- | --- | --- |
+| `received`（含 §5 的重放 / 去重命中、蜜罐命中） | `/contact/sent/` | “Thanks — your message is with First Rec. We’ll reply by email.” |
+| `validation_failed` | `/contact/error/invalid/` | “Your message wasn’t sent. Please check that you entered your name, a valid email address and a message of 10 to 5,000 characters, and ticked the privacy notice box. For your privacy we don’t keep what you typed, so you may need to enter it again — or email info@firstrec.com.au.” |
+| `rate_limited` | `/contact/error/rate-limited/` | “Too many messages from this connection. Please wait a few minutes, or email info@firstrec.com.au.” |
+| `unavailable`、`internal_error` | `/contact/error/unavailable/` | “Our form is temporarily unavailable. Please email info@firstrec.com.au — your message hasn’t been sent.” |
+| `challenge_failed` | `/contact/error/not-verified/` | “We couldn’t verify this submission. Please try again, or email info@firstrec.com.au.” |
+| `bad_request`、`payload_too_large`、`unsupported_media_type` 及其它任何码（表单模式没有幂等键，不会出现 `idempotency_conflict`） | `/contact/error/not-sent/` | “Something went wrong sending the form. Please try again, or email info@firstrec.com.au.” |
+
+- `Location` 在 API 里是常量表，不拼接任何输入、不带查询串；页面不读查询串、不回显任何字符串，没有可注入的位置。
+- **不把用户填写的内容或出错的字段名放进 URL**（避免 PII 进日志和浏览器历史）。所以无 JS 用户校验失败时只看到整体要求、看不到具体哪个字段错了，还可能要重新填写（浏览器后退时是否保留已填内容不作保证）——这是有意的取舍，写在 `invalid` 页文案里。有 JS 时仍按字段提示（上表 422 行）。
+- 表单本身带 HTML 约束（`required`、`type="email"`、`minlength` / `maxlength` 与 §3.2 一致），浏览器不靠 JS 就会在提交前拦下多数错误，`invalid` 页只兜底浏览器放行、API 拒绝的情况（例如 `test@localhost` 符合 `type="email"`，但不符合 §3.2 的 `local@domain.tld`）。
+- 浏览器最后看到的是静态页的 200，真实结果（422 / 429 / 503 …）只在 API 日志里。303 响应头带 `X-Request-Id`（即 `request_id`；静态页显示不了它）。303 不带 `Retry-After`：对 3xx 它的含义是「等这么久再跟随跳转」（RFC 9110 §10.2.3），等待时间写在 `rate-limited` 页文案里。
+- 实现（U9-c）：照 `app/work/[slug]/page.tsx` 的写法，`app/contact/error/[reason]/page.tsx` + `generateStaticParams()` 只生成上表 5 个错误页、`dynamicParams = false`；`/contact/sent/` 是普通静态页。6 个页面都设 `robots: { index: false }`（同 `app/not-found.tsx`），不进导航。构建后是 `dist/client/contact/error/<reason>/index.html`。`/contact/error/` 本身没有页面：访问它或任何未列出的 `<reason>`，`deploy/nginx.conf` 都返回品牌 404（没有 `index.html` 的目录本来是 403，被 `error_page 403 =404` 改成 404；本地实测）。
+- API 代码和公共站可能不在同一个仓库（OQ-12），这张路径表两边各有一份，用 T24 保证一致。
 
 `reference`：形如 `FR-2026-7K3QX`（年份 + 5 位 Crockford base32 随机数）。只用于沟通，**不是**数据库主键，不能用来查询任何内容。
 
@@ -359,12 +376,12 @@ v0.2 要求：AI 可以做摘要和回复草稿，**首封回复必须人工发�
 现状（`app/contact/page.tsx`）是纯 mailto。V2 表单上线后必须保证：**任何情况下用户都能看到 `info@firstrec.com.au`**。
 
 1. **mailto 链接永远存在**：表单下方固定一行「Prefer email? info@firstrec.com.au」，不依赖 JS、不依赖 API。
-2. **无 JS**：`<form method="post" action="/api/inquiries">` 普通提交 → 303 到静态 `/contact/sent/` 或 `/contact/error/?reason=…`（§3.3）。
-3. **有 JS**：拦截提交，`fetch` JSON；超时 10 秒。网络错误、超时、5xx、`503 unavailable`、`429` 时：在表单内显示错误文案，并生成一个**预填的 mailto 链接**（`subject=Inquiry from <name>`，`body` 为用户填的内容，URL 编码；超过约 1800 字符时截断并提示「message shortened — please paste the rest」），用户点一下就能用自己的邮件客户端发出，填写内容不丢。
-4. **构建期开关**：`NEXT_PUBLIC_INQUIRY_FORM_ENABLED`（公开值，不是秘密）。为 `false` 或未设时，Contact 页保持现在的纯 mailto 形态。**只有在 API 和 NPM 路由在生产验证通过之后**才用 `true` 构建上线——否则无 JS 用户提交会撞上 Nginx 的 405 页面。
-5. **维护模式**：API 环境变量 `INQUIRY_MAINTENANCE=1` 时直接返回 503，前端走 mailto 兜底，不用重新构建公共站。
+2. **无 JS**：`<form method="post" action="/api/inquiries">` 普通提交 → 303 到静态 `/contact/sent/` 或对应结果的静态错误页 `/contact/error/<reason>/`（§3.3 表）。这个 303 只在 API 自己回答时才有；请求在代理层就失败或被拦下时，用户看到的是代理的错误页而不是这些静态页：API 容器不可达时 NPM 回 502（拒绝连接）/ 504（超时）——2026-10-31 用 `nginx:1.27-alpine` 当代理模拟，两种都是 Nginx 自带的错误页，没有 mailto（NPM 实际的错误页未核实）；Cloudflare 规则（§2.3 的可选 WAF 限速）拦下时同理。这时无 JS 用户只能后退回 Contact 页用 mailto，是本节「任何情况下」目前做不到的部分；能否让 NPM 把 502 / 504 也送到 `/contact/error/unavailable/`，见 OQ-2。
+3. **有 JS**：拦截提交，`fetch` JSON；超时 10 秒。网络错误、超时、5xx、`503 unavailable`、`429`，以及响应不是本 API 的 JSON 时（例如 `/api/` 路由缺失、静态站回了 404 HTML，见 §1）：在表单内显示错误文案，并生成一个**预填的 mailto 链接**（`subject=Inquiry from <name>`，`body` 为用户填的内容，URL 编码；超过约 1800 字符时截断并提示「message shortened — please paste the rest」），用户点一下就能用自己的邮件客户端发出，填写内容不丢。
+4. **构建期开关**：`NEXT_PUBLIC_INQUIRY_FORM_ENABLED`（公开值，不是秘密）。为 `false` 或未设时，Contact 页保持现在的纯 mailto 形态。**只有在 API 和 NPM 路由在生产验证通过之后**才用 `true` 构建上线——否则 `POST /api/inquiries` 落到静态 Nginx，无 JS 用户得到品牌 404 页（状态 404，不是 405，见 §1），填写的内容丢了，页面上也没有邮箱地址。生产验证（发布时由主线程执行，不属于 §13 的隔离测试）：`curl -i -X POST -H 'Accept: application/json' https://www.firstrec.work/api/inquiries`（空 body）要得到 API 自己的 415 JSON（`unsupported_media_type`）；得到 404 HTML 说明 `/api/` 路由没生效。
+5. **维护模式**：API 环境变量 `INQUIRY_MAINTENANCE=1` 时直接返回 503（表单模式 303 → `/contact/error/unavailable/`），前端走 mailto 兜底，不用重新构建公共站。
 6. 公共站本身不依赖 API 才能渲染；API 宕机不影响任何其它页面（ADR D2 第 5 条）。
-7. `.com.au` frameset 期间：表单页在 `www.firstrec.work` 的 frame 里，提交同源，正常；`/contact/sent/` 也在 frame 里显示。mailto 链接在 frame 里点击可能被浏览器限制，需在 QA 中实测（OQ-10）。
+7. `.com.au` frameset 期间：表单页在 `www.firstrec.work` 的 frame 里，提交同源，正常；`/contact/sent/` 和 `/contact/error/<reason>/` 也在 frame 里显示。mailto 链接在 frame 里点击可能被浏览器限制，需在 QA 中实测（OQ-10）。
 
 ## 13. 测试计划（只用隔离的临时后端）
 
@@ -383,27 +400,29 @@ v0.2 要求：AI 可以做摘要和回复草稿，**首封回复必须人工发�
 | --- | --- | --- |
 | T1 | 合法 JSON 提交 | 201；库里一条 `NEW`；事件表 `created`；outbox 一条；假 SMTP 收到一封给 `info@` 的邮件 |
 | T2 | 合法表单（urlencoded）提交 | 303 → `/contact/sent/` |
-| T3 | 每个必填字段缺失 / 超长 / 邮箱格式错 | 422，`fields` 正确；表单模式 303 → error 页；库里无记录 |
-| T4 | 未知字段、超大 body、错误 Content-Type | 422 / 413 / 415 |
+| T3 | 每个必填字段缺失 / 超长 / 邮箱格式错 | 422，`fields` 正确；表单模式 303 → `/contact/error/invalid/`；库里无记录 |
+| T4 | 未知字段、超大 body、错误 Content-Type | 422 / 413 / 415；表单模式（直连 API）：未知字段 303 → `/contact/error/invalid/`，其余 303 → `/contact/error/not-sent/` |
 | T5 | 同一 `idempotency_key` 重放 3 次 | 只有一条记录；后两次 200 且 `reference` 相同；只有一封通知 |
 | T6 | 同 key 不同内容 | 409 |
 | T7 | 无 key、同邮箱 + 同留言 10 分钟内两次 | 一条记录 |
-| T8 | 蜜罐有值 | 对外 201 / 303；库里无内容 |
-| T9 | 超过各限速桶 | 429 + `Retry-After`；伪造 `X-Forwarded-For`（非可信代理来源）不能绕过 |
-| T10 | Origin 不在白名单 | 403 |
-| T11 | 停掉 Postgres | 503 `unavailable`；无 PII 日志 |
+| T8 | 蜜罐有值 | 对外 201 / 303 → `/contact/sent/`；库里无内容 |
+| T9 | 超过各限速桶 | 429 + `Retry-After`（表单模式 303 → `/contact/error/rate-limited/`，不带 `Retry-After`）；伪造 `X-Forwarded-For`（非可信代理来源）不能绕过 |
+| T10 | Origin 不在白名单 | 403（表单模式 303 → `/contact/error/not-verified/`） |
+| T11 | 停掉 Postgres | 503 `unavailable`（表单模式 303 → `/contact/error/unavailable/`）；无 PII 日志 |
 | T12 | 停掉假 SMTP | 提交仍 201；outbox 重试；恢复后补发一次，不重复 |
 | T13 | `inquiry_api` 角色直接 `SELECT` / `UPDATE` 询盘表 | 权限拒绝 |
 | T14 | 若用 PostgREST：anon key `SELECT` 询盘 | RLS 拒绝 |
 | T15 | 日志 PII 扫描：跑完 T1–T12 后 grep 所有容器日志中的测试邮箱、姓名、留言片段、原始 IP | 零命中 |
 | T16 | 邮件头注入：姓名含 `\r\nBcc:` | 头部被清洗，无额外收件人 |
 | T17 | 浏览器（Playwright）：JS 开、API 正常 | 表单内成功提示 |
-| T18 | 浏览器：JS 开、API 停掉 / 超时 | 错误文案 + 预填 mailto 链接；页面上的 `info@firstrec.com.au` 始终可见 |
-| T19 | 浏览器：JS 关 | 普通提交走 303；mailto 可见 |
+| T18 | 浏览器：JS 开、API 停掉 / 超时 / `/api/` 路由缺失（静态站回 404 HTML） | 错误文案 + 预填 mailto 链接；页面上的 `info@firstrec.com.au` 始终可见 |
+| T19 | 浏览器：JS 关 | 合法提交落到 `/contact/sent/`；邮箱填 `test@localhost`（浏览器放行、API 拒绝）落到 `/contact/error/invalid/`，超限速落到 `/contact/error/rate-limited/`，各自显示本页的固定文案和 mailto；地址栏里没有查询串和填写内容 |
 | T20 | 构建：`NEXT_PUBLIC_INQUIRY_FORM_ENABLED` 未设 | Contact 页与现状一致（只有 mailto） |
 | T21 | 公共站构建产物检查 | `dist/client` 里没有 API 代码、没有任何密钥或 Turnstile secret、没有 `service_role` |
 | T22 | 保留期任务（时间快进） | 到期询盘被匿名化，`SPAM` 被删除，事件表有记录 |
 | T23 | 隐私访问请求：按邮箱导出 / 删除 | 导出完整；删除后查不到个人字段 |
+| T24 | 表单模式落地页（构建产物 + API 常量表） | `dist/client/contact/sent/index.html` 和 §3.3 表里 5 个 `dist/client/contact/error/<reason>/index.html` 都存在，文案与 §3.3 一致且互不相同，都有 `mailto:info@firstrec.com.au` 和 `noindex`；API 的 `Location` 常量表与这 6 个路径完全一致（多一个、少一个都失败）；用 `nginx:1.27-alpine` + `deploy/nginx.conf` 访问 `/contact/error/` 和未列出的 `/contact/error/<x>/` 得到品牌 404；加任何查询串，页面字节不变 |
+| T25 | 静态站回退：`nginx:1.27-alpine` + `deploy/nginx.conf` + 公开构建，不加 `/api/` 路由 | `POST /api/inquiries`（JSON 和 urlencoded）→ 404，页面与 `404.html` 逐字节相同（不是 405）；`POST /contact/` → 405（Nginx 自带页）；JS 开时走 T18 的 mailto 兜底 |
 
 测试结束销毁所有容器和数据卷。测试报告里只写真实跑过的结果；没跑的不能写成通过。
 
@@ -413,9 +432,9 @@ v0.2 要求：AI 可以做摘要和回复草稿，**首封回复必须人工发�
 | --- | --- | --- | --- |
 | U9-a 数据库对象 | U7 | 询盘 / 事件 / 草稿 / outbox 表的 migration、`submit_inquiry()`、`inquiry_api` 角色、RLS | T5–T7、T13、T14、T22 在临时库通过 |
 | U9-b API 服务 | U9-a、OQ-1 / OQ-12 | 独立目录或仓库中的服务、Dockerfile、校验、限速、日志规则、outbox worker | T1–T12、T15、T16 |
-| U9-c 公共站表单 | U9-b | `app/contact/page.tsx` 表单 + 极少量 JS、`/contact/sent/`、`/contact/error/` 静态页、构建开关 | T17–T21；开关关闭时与现站一致 |
+| U9-c 公共站表单 | U9-b | `app/contact/page.tsx` 表单 + 极少量 JS、`/contact/sent/` 和 §3.3 的 5 个 `/contact/error/<reason>/` 静态页、构建开关 | T17–T21、T24、T25；开关关闭时与现站一致 |
 | U9-d 隐私说明页 | OQ-8 / OQ-9 | 隐私政策页文案（需创始人或顾问审定，不由 worker 编写法律承诺） | 创始人签字 |
-| U9-e 基础设施 | 上述全部 + 签批 | NPM `/api/` location、Cloudflare cache / 限速规则、API 容器上线、发信服务配置 | 主线程执行；staging 先验证；写进 `docs/RELEASE-CHECKLIST.md`（U11） |
+| U9-e 基础设施 | 上述全部 + 签批 | NPM `/api/` location、Cloudflare cache / 限速规则、API 容器上线、发信服务配置 | 主线程执行；staging 先验证；§12 第 4 条的生产判据通过后才打开构建开关；写进 `docs/RELEASE-CHECKLIST.md`（U11） |
 | U9-f Admin CRM | ADR D3 | 询盘列表、详情、状态变更、草稿、人工发送、导出 / 删除 | 另立设计 |
 
 ## 15. 待创始人签批的决策
@@ -437,7 +456,7 @@ v0.2 要求：AI 可以做摘要和回复草稿，**首封回复必须人工发�
 ## 16. 开放问题
 
 1. **OQ-1** 确认 API 运行时（I1；ADR Q4）。谁负责这个容器的补丁和监控？
-2. **OQ-2** NPM 当前对 `www.firstrec.work` 的实际配置是什么？能否加 custom location？（未登录核实）
+2. **OQ-2** NPM 当前对 `www.firstrec.work` 的实际配置是什么？能否加 custom location？（未登录核实）能否在 `/api/` location 里加 `error_page 502 504 =303 https://www.firstrec.work/contact/error/unavailable/;`，让 API 不可达时无 JS 用户也落到静态页？必须写完整 URL：写成 `/contact/…` 时 Nginx 只做内部跳转，回的是不带 `Location` 的 303（2026-10-31 用 `nginx:1.27-alpine` 实测）；切到 `.com.au` 时这个 URL 要跟着改。有 JS 时 `fetch` 会跟随这个 303 拿到 HTML，按 §12 第 3 条当失败处理。
 3. **OQ-3** 源站是否只能经 Cloudflare 访问？NAS 的 30040 端口或 NPM 是否有不经 Cloudflare 的公网入口？这决定真实 IP 和限速能否被绕过。
 4. **OQ-4** 发信服务选哪家？发件地址用 `@firstrec.com.au`（需改 GoDaddy DNS 加 SPF / DKIM / DMARC）还是服务商域名？（ADR Q7）
 5. **OQ-5** 是否启用 AI 草稿？用哪家服务？是否允许把询盘内容发给海外服务商？（ADR Q10）
@@ -473,6 +492,10 @@ paths:
     post:
       operationId: submitInquiry
       summary: Submit a new inquiry (stored with status NEW)
+      description: >
+        JSON mode (JSON body, or Accept: application/json) answers with the status codes below.
+        Form mode (a plain HTML form post from a browser without JS) always answers 303 to one
+        fixed static page per outcome, so the 4xx/5xx responses listed here are JSON mode only.
       parameters:
         - in: header
           name: Idempotency-Key
@@ -500,9 +523,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Received' }
         '303':
-          description: Form (non-JS) submission result. Redirects to /contact/sent/ or /contact/error/?reason=<code>.
+          description: >
+            Form mode only. Location is /contact/sent/ for received (including replays, duplicates
+            and honeypot hits); otherwise /contact/error/invalid/ (validation_failed),
+            /contact/error/rate-limited/ (rate_limited), /contact/error/unavailable/ (unavailable,
+            internal_error), /contact/error/not-verified/ (challenge_failed) or
+            /contact/error/not-sent/ (any other code). Each is a static page with fixed copy and
+            the mailto fallback. No query string; submitted values are never put in the URL.
           headers:
             Location:
+              schema:
+                type: string
+                enum: [/contact/sent/, /contact/error/invalid/, /contact/error/rate-limited/,
+                       /contact/error/unavailable/, /contact/error/not-verified/, /contact/error/not-sent/]
+            X-Request-Id:
+              description: The request_id of this response; the static pages cannot display it.
               schema: { type: string }
         '400': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
@@ -629,4 +664,4 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
 ```
 
-注：422 用 `ValidationError`（在 `Error` 基础上增加 `fields`）。草案中 `budget_range` / `services` 仍是自由文本，待 OQ-6 定稿后改为 enum。
+注：422 用 `ValidationError`（在 `Error` 基础上增加 `fields`）。303 的 `Location` 枚举就是 §3.3 表里的 6 个路径（T24）。草案中 `budget_range` / `services` 仍是自由文本，待 OQ-6 定稿后改为 enum。
