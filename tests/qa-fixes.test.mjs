@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
+const includeInternal = process.env.FIRST_REC_INCLUDE_INTERNAL === "1";
+const internalOnly = { skip: !includeInternal && "Molly Tea is internal-review; run npm run test:internal" };
 const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
 
 test("404.html is the branded First Rec. page with links back into the site", async () => {
@@ -32,7 +34,7 @@ test("case pages use <h2> for section labels and <p> for the copy", async () => 
   assert.ok(legacy > 0, "expected at least one legacy case page");
 });
 
-test("Molly Tea offers an H.264 MP4 source before the QuickTime fallback", async () => {
+test("Molly Tea offers an H.264 MP4 source before the QuickTime fallback", internalOnly, async () => {
   const html = await read("work/molly-tea/index.html");
   const sources = [...html.matchAll(/<source src="([^"]+)" type="([^"]+)"\/>/g)].map(([, src, type]) => `${src} ${type}`);
   assert.deepEqual(sources, [
