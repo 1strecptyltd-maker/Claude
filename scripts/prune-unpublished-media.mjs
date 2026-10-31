@@ -11,6 +11,21 @@ const exportRoot = path.join(projectRoot, "dist", "client");
 const mediaRoot = path.join(exportRoot, "portfolio");
 const textExtensions = /\.(html|rsc|js|mjs|css|json|txt|xml|webmanifest)$/;
 
+// This script only sees the shell environment. If the export step saw another mode (for example from a dotenv
+// file), internal-review case pages are already in the export: fail instead of shipping them as a public build.
+const publicationSource = await readFile(path.join(projectRoot, "app", "_data", "publication.ts"), "utf8");
+const records = [...publicationSource.matchAll(/^ {2}"([a-z0-9-]+)": record\("(public|internal-review)"/gm)];
+if (records.length === 0) throw new Error("prune-unpublished-media: no publication records parsed from app/_data/publication.ts");
+const internalSlugs = new Set(records.filter(([, , status]) => status === "internal-review").map(([, slug]) => slug));
+const exportedInternal = (await readdir(path.join(exportRoot, "work")))
+  .map((name) => name.replace(/\.(rsc|html)$/, ""))
+  .filter((slug) => internalSlugs.has(slug));
+if (exportedInternal.length > 0) {
+  console.error(`prune-unpublished-media: public build exported internal-review case(s): ${[...new Set(exportedInternal)].join(", ")}.`);
+  console.error("Do not deploy dist/client/. Set FIRST_REC_INCLUDE_INTERNAL only in the shell, never in a .env* file, and rebuild.");
+  process.exit(1);
+}
+
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(entries.map((entry) => {

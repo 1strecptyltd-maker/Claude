@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { parseEnv } from "node:util";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
@@ -32,6 +35,17 @@ const localBindingConfig = {
       ]
     : [],
 };
+
+// vinext loads .env, .env.local and .env.<mode>(.local) from the working directory into process.env before this
+// file runs, so a value from there looks like a shell value here, yet scripts/prune-unpublished-media.mjs (plain
+// node) never sees it. The publication mode must come from the shell alone: refuse to run if a dotenv file sets it.
+const dotenvModeFiles = readdirSync(process.cwd(), { withFileTypes: true }).filter((entry) =>
+  entry.isFile() && /^\.env(\..+)?$/.test(entry.name) && entry.name !== ".env.example"
+  && "FIRST_REC_INCLUDE_INTERNAL" in parseEnv(readFileSync(path.join(process.cwd(), entry.name), "utf8"))).map((entry) => entry.name);
+if (dotenvModeFiles.length > 0) {
+  throw new Error(`FIRST_REC_INCLUDE_INTERNAL is set in ${dotenvModeFiles.join(", ")}. Remove it there and set it only in the shell `
+    + "(FIRST_REC_INCLUDE_INTERNAL=1 npm run build) so every build step sees the same publication mode.");
+}
 
 export default defineConfig(async () => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
