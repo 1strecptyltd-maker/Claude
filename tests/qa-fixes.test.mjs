@@ -55,3 +55,16 @@ test("nginx serves the branded 404 and both deploy paths use that config", async
   assert.match(compose, /\.\/deploy\/nginx\.conf:\/etc\/nginx\/conf\.d\/default\.conf:ro/);
   assert.match(dockerfile, /COPY deploy\/nginx\.conf \/etc\/nginx\/conf\.d\/default\.conf/);
 });
+
+test("the home hero image is not hidden when visitors prefer reduced motion", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const motionStart = css.indexOf("@media (prefers-reduced-motion: no-preference)");
+  assert.ok(motionStart > 0, "no-preference motion block exists");
+  const base = css.slice(0, motionStart);
+  // Outside the no-preference block the butter curtain must rest out of frame; only the animation may cover the image.
+  const curtain = base.match(/\.hero-image-frame::after \{([^}]*)\}/)?.[1];
+  assert.ok(curtain, ".hero-image-frame::after base rule exists");
+  assert.match(curtain, /transform: translateY\(-101%\)/);
+  assert.match(css.slice(motionStart), /\.hero-image-frame::after \{ animation: curtain-up [^}]*both; \}/);
+  assert.match(css, /@keyframes curtain-up \{ from \{ transform: translateY\(0\); \} to \{ transform: translateY\(-101%\); \} \}/);
+});
