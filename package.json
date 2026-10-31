@@ -10,6 +10,7 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build && node scripts/normalize-static-export.mjs && node scripts/prune-unpublished-media.mjs",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/*.test.mjs",
+    "test:dist": "node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check:public": "node scripts/check-public-build.mjs",
     "db:generate": "drizzle-kit generate",
