@@ -172,7 +172,12 @@ test("featured cases are public, flagged provisional until the founder chooses, 
   assert.match(source, /featured: status === "public"/);
   assert.match(source, /featuredProvisional: status === "public"/);
   const records = await publicationRecords();
-  const publicCount = [...records.values()].filter((status) => status === "public").length;
+  // Public cases the founder explicitly kept off the home page (docs/DECISIONS.md, 2026-10-31).
+  const notFeatured = new Set([...source.matchAll(/^ {2}"([a-z0-9-]+)": record\("public",[^\n]*featured: false/gm)].map(([, slug]) => slug));
+  assert.deepEqual([...notFeatured], ["spin-panda"]);
+  const featured = [...records].filter(([slug, status]) => status === "public" && !notFeatured.has(slug)).map(([slug]) => slug);
   const home = await readFile(join(dist, "index.html"), "utf8");
-  assert.equal(home.match(/class="featured-project /g)?.length, publicCount);
+  const listed = [...home.matchAll(/class="featured-project [^"]*" href="\/work\/([a-z0-9-]+)\/"/g)].map(([, slug]) => slug);
+  assert.deepEqual(listed.sort(), featured.sort());
+  assert.ok(!listed.includes("spin-panda"), "Spin Panda stays off the home page selection");
 });

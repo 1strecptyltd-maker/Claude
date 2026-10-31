@@ -23,12 +23,13 @@
 ```sh
 npm ci
 cp .env.example .env          # 填 NEXT_PUBLIC_SITE_URL / NEXT_PUBLIC_CONTACT_EMAIL；不要在任何 .env 里写 FIRST_REC_INCLUDE_INTERNAL
+npm run media:placeholders    # 给缺的照片 / 视频生成占位文件（开发用，不会被提交，check:public 会拦住）
 npm run dev                   # vinext dev → http://localhost:3000
-npm run lint                  # 目录里有 .claude/worktrees/ 时改用 npx eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .claude
+npm run lint
 NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm run build   # 公开构建 → dist/client/
 ```
 
-测试命令（2026-10-31 实测：公开和内部两种模式都是 49 项，46 通过、3 项按模式跳过、0 失败；数字以后会变，以实际输出为准）：
+测试命令（2026-10-31 实测：公开和内部两种模式都是 56 项，53 通过、3 项按模式跳过、0 失败；数字以后会变，以实际输出为准）：
 
 | 命令 | 做什么 |
 | --- | --- |
@@ -84,7 +85,7 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
 
 ⚠️ **上线前注意**：本仓库已删掉 `/work/approved/` 内部索引页和 `approved.ts`，但 **Mac 上的原项目里还在**。如果从 Mac 的原项目构建部署，仍会把 71 条 Drive 记录导出到 `dist/client/work/approved/index.html`。以后请从本仓库构建；`tests/public-export-boundary.test.mjs`（U1）和 `check:public` 会拦下内部索引和 Drive 链接。
 
-⚠️ 发布状态（U3）已完成：公开构建只导出 6 个 `"public"` 案例。但其中 `spin-panda`、`dr-lewinn` 只靠原有的 "Public display authorised" 标记，`docs/` 里没有授权记录，等创始人确认（`docs/DECISIONS.md`「待创始人确认」）。另外 6 个视频不在仓库里（第 6c 节），`check:public` 不加 `--allow-missing-media` 会失败；拷回视频之前不要上线。
+⚠️ 发布状态（U3）已完成：公开构建只导出 6 个 `"public"` 案例；`spin-panda`、`dr-lewinn` 由创始人 2026-10-31 确认可以公开（`docs/DECISIONS.md`），Spin Panda 不进首页精选。开发期缺的照片和视频用 `npm run media:placeholders` 生成占位；`check:public` 发现占位文件或缺文件都会失败，真实素材在 NAS 上放好之前不要上线（第 6 节）。
 
 ## 4. 功能状态
 
@@ -106,7 +107,7 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
 - 测试和 lint：2026-10-31 实测 `npm test`、`npm run test:internal`、lint 全部通过（命令见第 2 节）
 
 ### 未完成 / 待做
-- **两个公开案例缺授权记录**：`spin-panda`、`dr-lewinn` 只靠原有标记公开，等创始人确认或补记录（`docs/DECISIONS.md`「待创始人确认」）；其余 30 个仍是 `"internal-review"`
+- 其余 30 个案例仍是 `"internal-review"`；`spin-panda`、`dr-lewinn` 已由创始人口头确认（2026-10-31），书面授权记录以后补进 `docs/`
 - **U4**：创始人选定首页 6–8 个精选和顺序、餐饮合并策略、文案定稿
 - **QA 剩余项**：M4 后半（已公开案例仍显示 "Public display authorised / … to confirm" 这类 `mediaNotice`，需要改成面向访客的文案或不渲染）、L3（`/work/` 缩略图 `cover` 裁切，等设计决定）
 - **U5 剩余**：DNS 尚未统一，切换前仍按 `www.firstrec.work` 构建；线上旧版仍是 `hello@cheese.studio`，下次部署后替换。见 `docs/DECISIONS.md`
@@ -115,7 +116,7 @@ sudo /usr/bin/docker compose -f compose.truenas.yaml up -d --force-recreate
 - U11 发布前验收记录（`docs/RELEASE-CHECKLIST.md`）还没建
 - 未做：NAS/Cloudflare/GoDaddy 后台配置核实
 
-建议顺序：创始人确认 `spin-panda` / `dr-lewinn` 和 U4 精选 → 拷回视频 → 按第 3 节的门槛部署 → U11 记录 → V2 签批后再拆实现单元。
+建议顺序：U4 精选（Spin Panda 已确定不进首页）→ 开发完成后在 NAS 上放入真实素材 → 按第 3 节的门槛部署 → U11 记录 → V2 签批后再拆实现单元。
 
 ## 5. 环境变量
 
@@ -145,7 +146,7 @@ Worker 模板里的 `env.ASSETS` / `env.IMAGES` / `env.DB` 是 Cloudflare bindin
 
 **b) 尚未取得公开授权的 30 个案例的图片**：`public/portfolio/` 下这些目录整个没提交
 `bentley/`、`chongguang-workshop/`、`eimele/`、`emp-dairy-lactoferrin/`、`geely/`、`hatman/`、`malaymalay/`、`mirror-and-moon/`、`molly-tea/`、`stasis/`、`food-hospitality/`（20 家餐饮）。
-`app/_data/site.ts` 里这些案例的文字和图片路径**还保留着**，所以本地/云端开发时这些页面会是坏图。授权确认一家，就从 Mac 拷一家目录进来再提交。
+`app/_data/site.ts` 里这些案例的文字和图片路径**还保留着**。开发时运行 `npm run media:placeholders` 给缺的文件生成占位图 / 占位视频（带 `FIRST-REC-PLACEHOLDER` 标记，路径都在 `.gitignore` 里，不会被提交）；真实素材在 NAS 部署时再放进来（`docs/DECISIONS.md` 2026-10-31）。
 仓库里保留的图片：6 个已授权案例（`spin-panda`、`dr-lewinn`、`indiba-icc`、`jo-loves`、`mm-karaoke`、`nvidia`），品牌素材 `brand/`，`og-*.png`，以及 4 张通用占位图（`blue-current`、`hard-light`、`southbound`、`tidal-vows`，没有被页面引用）。
 
 **c) 视频**：为了满足"排除视频素材和超过 50MB 文件"，以下网页视频**没有提交**，但 `app/_data/site.ts` 引用了它们。在云端构建出的站点这几个视频会 404，部署前要从 Mac 拷回 `public/portfolio/` 对应位置：
@@ -189,5 +190,5 @@ Mac 源目录：`/Users/cheese/Documents/工作室创业/00-驾驶舱/作品集/
 
 1. `git config core.hooksPath .githooks`（启用 50MB 拦截钩子）
 2. `npm ci && npm run lint && NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm test`，再跑一次 `npm run test:internal`
-3. 读 `docs/DECISIONS.md`（已确认的配置和待创始人确认的事），再读 `docs/HANDOFF-2026-10-17-CLAUDE.md` 第 5、7、8 节（授权、任务单元、需要创始人决定的事）
+3. 读 `docs/DECISIONS.md`（创始人已确认的配置和决定），再读 `docs/HANDOFF-2026-10-17-CLAUDE.md` 第 5、7、8 节（授权、任务单元、需要创始人决定的事）
 4. 部署前按第 3 节的门槛来：公开构建、`test:dist` + `check:public` 不加 `--allow-*` 通过；跑过 `test:internal` 之后 `dist/client/` 是内部版，必须重新做公开构建

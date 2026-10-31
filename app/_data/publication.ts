@@ -16,12 +16,14 @@ export type PublicationRecord = {
 
 // Placeholder until the founder picks 6-8 featured cases (docs/DECISIONS.md, 2026-10-31): every public case is
 // featured in its current order and flagged provisional. With fewer than 6 public cases, show only those; never pad.
-const record = (status: PublicationStatus, evidence: string): PublicationRecord => ({
+// `overrides` records an explicit founder decision for one case, which is no longer provisional.
+const record = (status: PublicationStatus, evidence: string, overrides: Partial<PublicationRecord> = {}): PublicationRecord => ({
   status,
   evidence,
   featured: status === "public",
   featuredProvisional: status === "public",
   order: null,
+  ...overrides,
 });
 
 const AUDIT = "docs/HANDOFF-2026-10-17-CLAUDE.md section 5";
@@ -29,7 +31,7 @@ const SUMMARY = "HANDOFF.md sections 4 and 6";
 const PENDING = `${AUDIT}: internal review, publication clearance pending`;
 const DRIVE_CSV = `${PENDING}; the 2026-08-15 Drive CSV approved ingestion only (docs/PORTFOLIO-INGESTION-2026-08-15-GOOGLE-DRIVE.md)`;
 const LOCAL_2026_09_01 = `${SUMMARY}; ${AUDIT}; docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md records the user's explicit public-display instruction. Credits and project details still to confirm`;
-const MARKER_ONLY = `${SUMMARY}; ${AUDIT} lists it as authorised from the existing marker, but no original approval record was found in the repo`;
+const FOUNDER_CONFIRMED = `${SUMMARY}; ${AUDIT} lists it as authorised from the existing marker; the founder confirmed public display on 2026-10-31 (docs/DECISIONS.md). No written client approval is stored in the repo`;
 
 // Every case study needs a record here. Anything not explicitly cleared stays internal-review.
 export const publication: Record<string, PublicationRecord> = {
@@ -42,7 +44,8 @@ export const publication: Record<string, PublicationRecord> = {
   "hatman": record("internal-review", PENDING),
   "malaymalay": record("internal-review", PENDING),
   "mirror-and-moon": record("internal-review", PENDING),
-  "spin-panda": record("public", MARKER_ONLY),
+  // Founder, 2026-10-31: public, but not strong enough for the home page selection.
+  "spin-panda": record("public", FOUNDER_CONFIRMED, { featured: false, featuredProvisional: false }),
   "spring-bistro": record("internal-review", DRIVE_CSV),
   "chuanxi-road-north": record("internal-review", DRIVE_CSV),
   "tea-spot": record("internal-review", DRIVE_CSV),
@@ -63,7 +66,7 @@ export const publication: Record<string, PublicationRecord> = {
   "zhongchu-dim-sum": record("internal-review", DRIVE_CSV),
   "bengong-yangmei": record("internal-review", DRIVE_CSV),
   "sweet-lu": record("internal-review", DRIVE_CSV),
-  "dr-lewinn": record("public", `${MARKER_ONLY}. The direct-client claim applies to this project only`),
+  "dr-lewinn": record("public", `${FOUNDER_CONFIRMED}. The direct-client claim applies to this project only`),
   "indiba-icc": record("public", LOCAL_2026_09_01),
   "jo-loves": record("public", LOCAL_2026_09_01),
   "mm-karaoke": record("public", LOCAL_2026_09_01),

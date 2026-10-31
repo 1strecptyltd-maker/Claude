@@ -31,7 +31,7 @@ The deployable static site is written to `dist/client/`. See `NAS-DEPLOY.md` for
 
 ## Publication status
 
-Every case study has a record in `app/_data/publication.ts`: `status` (`"public"` or `"internal-review"`), `evidence` (the document that clears it), `featured` and `order`. Anything not explicitly cleared stays `"internal-review"`; the `mediaNotice` caption is never treated as approval on its own. Four public cases (`indiba-icc`, `jo-loves`, `mm-karaoke`, `nvidia`) cite the public-display instruction recorded in `docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md`. The other two, `spin-panda` and `dr-lewinn`, are public only on the pre-existing "Public display authorised" marker: no original approval record for them is in `docs/`. They stay public pending the founder's confirmation (open item in `docs/DECISIONS.md`).
+Every case study has a record in `app/_data/publication.ts`: `status` (`"public"` or `"internal-review"`), `evidence` (the document that clears it), `featured` and `order`. Anything not explicitly cleared stays `"internal-review"`; the `mediaNotice` caption is never treated as approval on its own. Four public cases (`indiba-icc`, `jo-loves`, `mm-karaoke`, `nvidia`) cite the public-display instruction recorded in `docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md`. The other two, `spin-panda` and `dr-lewinn`, were confirmed for public display by the founder on 2026-10-31 (`docs/DECISIONS.md`); no written client approval is stored in the repo yet. `spin-panda` is public but kept off the home page selection.
 
 | Build | Command | Case studies |
 | --- | --- | --- |

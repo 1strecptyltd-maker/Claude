@@ -131,7 +131,10 @@ test("public work index lists only cleared cases and drops empty categories", { 
   }
   assert.doesNotMatch(work, /Food \+ menu|id="food-menu"/);
   assert.doesNotMatch(work, /clearance is pending|internal review/i);
-  assert.equal(home.match(/class="featured-project /g)?.length, 6);
+  // Six public cases; Spin Panda stays public but off the home page selection (docs/DECISIONS.md, 2026-10-31).
+  assert.equal(home.match(/class="featured-project /g)?.length, 5);
+  assert.doesNotMatch(home, /href="\/work\/spin-panda\/"/);
+  assert.match(work, /href="\/work\/spin-panda\/"/);
 });
 
 test("renders Spin Panda's authorised media and the shared work categories", async () => {

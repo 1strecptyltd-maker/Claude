@@ -42,7 +42,7 @@ The production container is Nginx serving only the exported static files. It res
 ## Update the portfolio
 
 - Edit shared content in `app/_data/site.ts`.
-- Change which case studies are public in `app/_data/publication.ts`, with the approval record cited in `evidence`. Exception: `spin-panda` and `dr-lewinn` are public only because of the pre-existing "Public display authorised" marker; no approval record for them is in `docs/` yet (open item in `docs/DECISIONS.md`).
+- Change which case studies are public in `app/_data/publication.ts`, with the approval record cited in `evidence`. `spin-panda` and `dr-lewinn` cite the founder's confirmation of 2026-10-31 in `docs/DECISIONS.md`.
 - Edit page-specific content in the matching folder under `app/`.
 - Replace the preview files in `public/portfolio/` with approved client assets, or update the image paths in `app/_data/site.ts`.
 - Rebuild the export or Docker image after changes.

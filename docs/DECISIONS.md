@@ -26,12 +26,18 @@
 - 创始人尚未选定首页 6–8 个精选案例和顺序。
 - 在选定之前，精选位暂用已取得公开授权的案例按现有顺序填充，并在数据里标为占位（provisional），不代表最终选择。已授权案例不足 6 个时如实显示，不凑数。
 
-## 待创始人确认
+### `spin-panda`、`dr-lewinn`：创始人确认可以公开
 
-以下事项尚未决定，不代表已批准。决定后在上方按日期补一条记录，并删掉这里对应的条目。
+- 创始人 2026-10-31 确认这两个案例已获客户同意，可以公开展示，保持 `"public"`。
+- 仓库里仍没有书面授权（邮件、合同条款等）；`app/_data/publication.ts` 的 `evidence` 引用本条记录。以后拿到书面记录，存进 `docs/` 再改 `evidence`。
 
-### `spin-panda`、`dr-lewinn` 的公开授权记录
+### 首页精选：Spin Panda 不进首页
 
-- 现状：这两个案例在 `app/_data/publication.ts` 里是 `"public"`，会进入公开构建。依据只有旧数据里原有的 "Public display authorised" 标记（`docs/HANDOFF-2026-10-17-CLAUDE.md` 第 5 节按该标记列为已授权）；`docs/` 里没有原始授权记录。另外 4 个公开案例（`indiba-icc`、`jo-loves`、`mm-karaoke`、`nvidia`）引用的是 `docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md` 里记录的公开展示指示。
-- 状态保持不变，等创始人决定；没有改动任何案例的发布状态。
-- 需要创始人：确认这两个案例可以公开展示，并提供授权记录（邮件、合同条款或书面确认，存入 `docs/` 后在 `evidence` 里引用）；或者决定先改回 `"internal-review"`。
+- 创始人认为 Spin Panda 不算特别好的案例：保持公开（Work 页和直接链接都在），但不进首页精选，也不做首页大图。
+- `app/_data/publication.ts` 里 `spin-panda` 记为 `featured: false`（明确决定，不再是占位）。其余 5 个公开案例仍按现有顺序作首页精选占位（`featuredProvisional`），等创始人选定。
+
+### 开发期媒体：用占位文件，真实素材在 NAS 上填充
+
+- 不把真实照片、视频拷进仓库或云端开发环境。开发时运行 `npm run media:placeholders`，给 `app/_data/site.ts` 引用但本地缺失的每个文件生成占位：图片按数据里的比例，视频是几 KB 的 H.264 短片，画面写着 PLACEHOLDER。已有文件不会被覆盖；`npm run media:placeholders:clean` 只删除带标记的占位文件。
+- 每个占位文件都嵌了 `FIRST-REC-PLACEHOLDER` 标记；`npm run check:public` 发现标记就报错，不让上线（预览可加 `--allow-placeholders` 降为警告）。占位文件所在路径都已在 `.gitignore` 里，不会被提交。
+- 开发完成后，创始人在 NAS 上部署时把真实素材放进 `public/portfolio/` 对应位置，重新构建，`check:public` 不加 `--allow-*` 通过后再上线。
