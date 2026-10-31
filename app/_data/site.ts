@@ -7,6 +7,8 @@ export type CaseStudy = {
   discipline: "Film + production" | "Photography" | "Food + menu" | "Food + hospitality";
   image: string;
   alt: string;
+  /** Optional image for the home page hero; falls back to `image` / `alt`. */
+  homeImage?: { src: string; alt: string; position?: string };
   scope: string;
   summary: string;
   challenge: string;
@@ -430,7 +432,7 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/spin-panda/film.mp4",
-      poster: "/portfolio/spin-panda/hero.jpg",
+      poster: "/portfolio/spin-panda/film-poster.jpg",
       title: "Spin Panda film",
     },
 
@@ -879,8 +881,8 @@ export const caseStudies: CaseStudy[] = [
     client: "Dr. LeWinn's",
     category: "Corporate interviews / Anniversary film",
     discipline: "Film + production",
-    image: "/portfolio/dr-lewinn/hero.jpg",
-    alt: "Brett Charlton in a Dr. LeWinn's branded interview cover with skincare products",
+    image: "/portfolio/dr-lewinn/lead.jpg",
+    alt: "The heritage archive room from Dr. LeWinn's 35th anniversary film",
     scope: "Corporate interview and anniversary film production.",
     summary: "A direct-client film series bringing together executive interviews, product storytelling and a 35th anniversary brand story.",
     challenge: "The project spanned two bilingual interviews and a separate anniversary film, moving between on-camera speakers, product demonstrations, retail context and laboratory imagery.",
@@ -897,7 +899,7 @@ export const caseStudies: CaseStudy[] = [
       },
       {
         src: "/portfolio/dr-lewinn/ceo-interview.mp4",
-        poster: "/portfolio/dr-lewinn/hero.jpg",
+        poster: "/portfolio/dr-lewinn/ceo-poster.jpg",
         title: "Brett Charlton interview film",
       },
       {
@@ -914,6 +916,11 @@ export const caseStudies: CaseStudy[] = [
     discipline: "Film + production",
     image: "/portfolio/indiba-icc/hero.jpg",
     alt: "An INDIBA treatment demonstration taking place in front of a red exhibition backdrop",
+    homeImage: {
+      src: "/portfolio/indiba-icc/home-hero.jpg",
+      alt: "An INDIBA therapist giving a facial treatment on the stand at Beauty Expo Australia",
+      position: "50% 12%",
+    },
     scope: "Exhibition film and photography.",
     summary: "An exhibition-floor story built around treatment demonstrations, technology, team presence and visitor interaction.",
     challenge: "INDIBA's red exhibition stand hosted live treatment demonstrations alongside its device displays, with visitors stopping to watch and talk.",
@@ -951,7 +958,7 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/indiba-icc/film.mp4",
-      poster: "/portfolio/indiba-icc/hero.jpg",
+      poster: "/portfolio/indiba-icc/film-poster.jpg",
       title: "INDIBA exhibition film",
     },
   },
@@ -994,7 +1001,7 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/jo-loves/film.mp4",
-      poster: "/portfolio/jo-loves/hero.jpg",
+      poster: "/portfolio/jo-loves/film-poster.jpg",
       title: "Jo Loves retail event film",
     },
   },

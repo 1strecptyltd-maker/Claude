@@ -24,7 +24,14 @@ export default function Home() {
         </div>
         <figure className="hero-media">
           <div className="hero-image-frame">
-            <Image src={heroProject.image} alt={heroProject.alt} fill priority sizes="(max-width: 767px) 100vw, 48vw" />
+            <Image
+              src={heroProject.homeImage?.src ?? heroProject.image}
+              alt={heroProject.homeImage?.alt ?? heroProject.alt}
+              fill
+              priority
+              sizes="(max-width: 767px) 100vw, 48vw"
+              style={heroProject.homeImage?.position ? { objectPosition: heroProject.homeImage.position } : undefined}
+            />
           </div>
           <figcaption>{heroProject.client} / {heroProject.category}</figcaption>
         </figure>

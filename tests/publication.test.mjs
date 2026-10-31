@@ -162,7 +162,7 @@ test("vite.config.ts refuses a publication mode set in a dotenv file", async () 
 test("home hero uses a public case", async () => {
   const [home, records, projects] = await Promise.all([readFile(join(dist, "index.html"), "utf8"), publicationRecords(), caseStudies()]);
   const heroImage = home.match(/<figure class="hero-media">[\s\S]*?<img[^>]*src="([^"]+)"/)?.[1];
-  const hero = projects.find((project) => heroImage?.includes(project.media[0] ?? "\0"));
+  const hero = projects.find((project) => project.media.some((path) => heroImage?.includes(path)));
   assert.ok(hero, `hero image ${heroImage} does not belong to a case study`);
   assert.equal(records.get(hero.slug), "public", `hero uses ${hero.slug}`);
 });
