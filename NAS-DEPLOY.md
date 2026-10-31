@@ -74,16 +74,16 @@ It exits non-zero and prints a grouped report when the export:
 - leaks internal data: `/work/approved`, `drive.google.com`, `docs.google.com` or Google Drive folder-ID-like strings;
 - references a local `src` / `href` / `poster` / `srcset` / CSS `url()` file that is not in `dist/client/`;
 - lacks `404.html`, a route's `index.html`, or still has flat `route.html` files (normalisation did not run);
-- shows no https absolute meta URL (so `NEXT_PUBLIC_SITE_URL` was not set) or a different origin than `--expect-site-url`;
-- contains the default contact email `hello@cheese.studio`.
+- shows no https absolute meta URL (so `NEXT_PUBLIC_SITE_URL` was not set), or a meta URL origin other than `https://www.firstrec.work` or `https://www.firstrec.com.au` (`docs/DECISIONS.md`; `--expect-site-url` narrows this to one);
+- contains the old default contact email `hello@cheese.studio`, has a `mailto:` link to any address other than `info@firstrec.com.au`, or has no `mailto:info@firstrec.com.au` link at all (`--expect-email=` changes the expected address).
 
-Flags for local/preview builds only: `--allow-missing-media` turns the videos listed in `HANDOFF.md` section 6c into warnings (or pass `--allow-missing-media=/path/a.mp4,/path/b.jpg`); `--allow-default-email` turns the default email into a warning. Do not upload a build that only passes with these flags.
+Flags for local/preview builds only: `--allow-missing-media` turns the videos listed in `HANDOFF.md` section 6c into warnings (or pass `--allow-missing-media=/path/a.mp4,/path/b.jpg`); `--allow-default-email` turns the old default email into a warning. Do not upload a build that only passes with these flags.
 
-State on 2026-10-30 (build from this repository with `NEXT_PUBLIC_SITE_URL=https://www.firstrec.work`, no contact email set): **FAIL**, which is expected until U3 and the media copy are done:
+State on 2026-10-31 (public build from this repository after U3, with `NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au`; 83 files, 6 public cases): **FAIL** with 6 errors, all videos from `HANDOFF.md` 6c that are not in Git:
 
-- 103 missing files: the 9 videos from `HANDOFF.md` 6c, plus 94 images under the 11 `public/portfolio/` folders not committed (6b: `food-hospitality` 45, `chongguang-workshop`, `emp-dairy-lactoferrin`, `hatman`, `mirror-and-moon` 6 each, `bentley`, `eimele`, `geely`, `malaymalay` 5 each, `stasis` 4, `molly-tea` 1);
-- default email `hello@cheese.studio` in 86 files;
-- no localhost, `http://`, `/work/approved` or Drive leaks; all routes have `index.html`; `404.html` exists.
+- `/portfolio/dr-lewinn/anniversary-film.mp4`, `/portfolio/dr-lewinn/ceo-interview.mp4`, `/portfolio/dr-lewinn/jade-interview.mp4`, `/portfolio/indiba-icc/film.mp4`, `/portfolio/jo-loves/film.mp4`, `/portfolio/spin-panda/film.mp4`;
+- with `--allow-missing-media` it passes with those 6 as warnings. Copy the videos from the Mac into `public/portfolio/` and rebuild before a real upload;
+- contact email, site origin, routes, `404.html` and the internal-leak checks all pass.
 
 ### Upload with backup and rollback
 
