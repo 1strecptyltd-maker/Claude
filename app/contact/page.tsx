@@ -23,7 +23,7 @@ export default function ContactPage() {
         </ol>
       </section>
       <section className="contact-location">
-        <p>Sydney based</p><h2>Available across Australia.<br />Working in English&nbsp;+ Mandarin.</h2>
+        <p className="eyebrow">Sydney based</p><h2>Available across Australia.<br />Working in English&nbsp;+ Mandarin.</h2>
       </section>
     </PageShell>
   );

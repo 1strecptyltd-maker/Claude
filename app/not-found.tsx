@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Page not found | First Rec.", robots
 export default function NotFound() {
   return (
     <PageShell>
-      <header className="page-hero">
+      <header className="page-hero page-hero--fill">
         <p className="eyebrow">404</p>
         <h1>Page not found.</h1>
         <p>Nothing lives at this address; the link may be mistyped, or the page may have moved.</p>
