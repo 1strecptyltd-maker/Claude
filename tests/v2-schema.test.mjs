@@ -154,6 +154,19 @@ describe("V2 schema against a throwaway PostgreSQL", { skip }, () => {
     fails(`insert into project_facts (project_id, label, value, state) values (${nvidia}, 'Year', 'TBC', 'known')`, /facts_known_is_renderable/);
     fails(`insert into project_facts (project_id, label, value, state) values (${nvidia}, 'Year', '2025', 'unknown')`, /facts_known_is_renderable/);
     fails(`insert into project_credits (project_id, role, state) values (${nvidia}, 'Director', 'known')`, /credits_known_has_name/);
+    // "known" follows known() in CaseStudyBlocks.tsx: trim every whitespace JS trim() strips (not
+    // just spaces), then reject blank and placeholder values, for credits as well as facts.
+    for (const value of ["E'TBC\\n'", "E'\\tTBC'", "E'\\n'", "E'\\u00a0TBC'", "E'tbd\\u3000'", "E'\\ufeff'"]) {
+      fails(`insert into project_facts (project_id, label, value, state) values (${nvidia}, 'Year', ${value}, 'known')`, /facts_known_is_renderable/);
+    }
+    for (const name of ["'TBC'", "E'n/a\\n'", "E'\\u00a0'"]) {
+      fails(`insert into project_credits (project_id, role, name, state) values (${nvidia}, 'Director', ${name}, 'known')`, /credits_known_has_name/);
+    }
+    // ...while values known() renders are still accepted (rolled back).
+    must(`begin;
+      insert into project_facts (project_id, label, value, state) values (${nvidia}, 'Year', E' 2025\\n', 'known'), (${nvidia}, 'Status', 'Pending approval', 'known');
+      insert into project_credits (project_id, role, name, state) values (${nvidia}, 'Director', 'N/A Studio', 'known');
+      rollback;`);
     fails(`insert into media_assets (class, kind, variant, path, source_reference) values ('original', 'image', 'source', 'portfolio/x/raw.cr3', 'nas://raw')`, /media_class_storage/);
     fails(`insert into media_assets (class, kind, variant, path) values ('derivative', 'image', '1600', '/portfolio/x.jpg')`, /media_path_shape/);
     fails(`insert into media_assets (class, kind, variant, path) values ('derivative', 'image', '1600', 'portfolio/../secret.jpg')`, /media_path_shape/);
@@ -205,6 +218,36 @@ describe("V2 schema against a throwaway PostgreSQL", { skip }, () => {
     assert.equal(asOk("anon", "select count(*) from collections"), "0");
   });
 
+  test("anon reads a derivative only while a public project places it, outside private buckets", () => {
+    const project = (slug) => `(select id from projects where slug = '${slug}')`;
+    const asset = (slug, file, kind, variant, bucket = "null") =>
+      `insert into media_assets (project_id, class, kind, variant, path, storage_bucket) values (${project(slug)}, 'derivative', '${kind}', '${variant}', 'portfolio/${slug}/${file}', ${bucket});`;
+    const id = (path) => `(select id from media_assets where path = 'portfolio/${path}')`;
+    // Uploads registered under published nvidia: a rejected shot in a private bucket, one never
+    // placed, a placed one still in a private bucket, and a film whose poster is only its poster.
+    // Plus an internal project's derivative placed on nvidia's page.
+    asOk("authenticated", [
+      asset("nvidia", "rejected-unreleased-talent.jpg", "image", "1600", "'private-review'"),
+      asset("nvidia", "unplaced.jpg", "image", "1600"),
+      asset("nvidia", "placed-private.jpg", "image", "1600", "'private-review'"),
+      asset("nvidia", "film.mp4", "video", "web_video"),
+      asset("nvidia", "film-poster.jpg", "image", "1600"),
+      asset("bentley", "cross-placed.jpg", "image", "1600"),
+      `insert into project_media (project_id, media_id, usage, position) values
+        (${project("nvidia")}, ${id("nvidia/placed-private.jpg")}, 'gallery', 98), (${project("nvidia")}, ${id("bentley/cross-placed.jpg")}, 'gallery', 99);`,
+      `insert into project_media (project_id, media_id, usage, position, poster_id)
+        values (${project("nvidia")}, ${id("nvidia/film.mp4")}, 'film', 0, ${id("nvidia/film-poster.jpg")})`,
+    ].join("\n"), ids.owner);
+
+    assert.equal(asOk("anon", `select count(*) from media_assets where path in
+      ('portfolio/nvidia/rejected-unreleased-talent.jpg', 'portfolio/nvidia/unplaced.jpg', 'portfolio/nvidia/placed-private.jpg')`), "0");
+    assert.equal(asOk("anon", "select count(*) from media_assets where path = 'portfolio/bentley/cross-placed.jpg'"), "0");
+    assert.equal(asOk("anon", "select string_agg(path, ',' order by path) from media_assets where path like 'portfolio/nvidia/film%'"),
+      "portfolio/nvidia/film-poster.jpg,portfolio/nvidia/film.mp4");
+    // Everything anon can read is placed media or a poster of a public project.
+    assert.equal(asOk("anon", "select count(*) from media_assets m where not exists (select 1 from project_media pm where m.id in (pm.media_id, pm.poster_id))"), "0");
+  });
+
   test("anon can submit an inquiry but cannot read, alter status or read it back", () => {
     asOk("anon", "insert into inquiries (name, email, message) values ('Anon', 'anon@example.test', 'Hello from the form')");
     asFails("anon", "select count(*) from inquiries", /permission denied/);
@@ -212,6 +255,15 @@ describe("V2 schema against a throwaway PostgreSQL", { skip }, () => {
     asFails("anon", "insert into inquiries (name, email, message, status) values ('A', 'a@example.test', 'x', 'WON')", /permission denied/);
     asFails("anon", "update inquiries set status = 'SPAM'", /permission denied/);
     assert.equal(must("select status || ':' || source from inquiries where email = 'anon@example.test'"), "NEW:website_form");
+    // Caps apply to the raw value, so whitespace padding cannot store an unbounded row; a
+    // whitespace-only name or message is blank (same whitespace class as facts).
+    asFails("anon", "insert into inquiries (name, email, message) values ('A' || repeat(' ', 200), 'pad@example.test', 'Hi')", /inquiries_name_check/);
+    asFails("anon", "insert into inquiries (name, email, message) values ('Pad', 'pad@example.test', 'a' || repeat(' ', 5000))", /inquiries_message_check/);
+    asFails("anon", "insert into inquiries (name, email, message) values ('Pad', 'pad@example.test' || repeat(' ', 400), 'Hi')", /inquiries_email_check/);
+    asFails("anon", "insert into inquiries (name, email, message) values (E'\\n\\t', 'pad@example.test', 'Hi')", /inquiries_name_check/);
+    asFails("anon", "insert into inquiries (name, email, message) values ('Pad', 'pad@example.test', E'\\u3000\\n')", /inquiries_message_check/);
+    // The caps are inclusive (rolled back).
+    must("begin; set local role anon; insert into inquiries (name, email, message) values (repeat('n', 200), repeat('e', 307) || '@example.test', repeat('m', 5000)); rollback;");
     // Audit keeps personal data out of the log.
     assert.equal(must("select count(*) from audit_log where table_name = 'inquiries' and (before is not null or after is not null)"), "0");
   });
