@@ -11,7 +11,7 @@ const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.ur
 const assertReviewNotice = (html, note) => (includeInternal ? assert.match : assert.doesNotMatch)(html, note);
 
 const pages = [
-  ["index.html", /Visual production that/],
+  ["index.html", /One shoot\./],
   ["work/index.html", /Built for the moment/],
   ["work/food-hospitality/index.html", /Made to be/],
   ["work/spin-panda/index.html", /Spin Panda/],
@@ -73,7 +73,7 @@ test("keeps metadata, static export settings and accessibility fallbacks", async
   assert.match(layout, /\/og-first-rec\.png/);
   assert.match(layout, /\/brand\/first-rec\/icon\.svg/);
   assert.match(layout, /@fontsource-variable\/archivo/);
-  assert.match(page, /hero-line/);
+  assert.match(page, /HeroReel/);
   assert.match(css, /@keyframes waterfall/);
   assert.match(css, /@keyframes curtain-up/);
   assert.match(css, /animation-timeline: view/);
@@ -139,7 +139,7 @@ test("public work index lists only cleared cases and drops empty categories", { 
   assert.doesNotMatch(work, /Food \+ menu|id="food-menu"/);
   assert.doesNotMatch(work, /clearance is pending|internal review/i);
   // Eight featured cases; Spin Panda and the other 2026-11-01 off-home cases stay public but off the home page (docs/DECISIONS.md, 2026-11-01).
-  assert.equal(home.match(/class="featured-project /g)?.length, 8);
+  assert.equal(home.match(/class="case-link"/g)?.length, 8);
   assert.doesNotMatch(home, /href="\/work\/spin-panda\/"/);
   assert.match(work, /href="\/work\/spin-panda\/"/);
 });

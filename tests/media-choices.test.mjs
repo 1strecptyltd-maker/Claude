@@ -19,21 +19,19 @@ const filmPosterSlugs = ["indiba-icc", "jo-loves", "spin-panda"];
 
 test("home hero leads with the INDIBA photograph", async () => {
   const html = body(await read("index.html"));
-  const figure = html.match(/<figure class="hero-media">[\s\S]*?<\/figure>/)?.[0];
-  assert.ok(figure, "home page has no hero-media figure");
+  const figure = html.match(/<figure class="hf is-on" data-kind="img">[\s\S]*?<\/figure>/)?.[0];
+  assert.ok(figure, "home page has no hero photo frame");
   const img = figure.match(/<img\b[^>]*>/)?.[0];
-  assert.ok(img, "hero figure has no image");
+  assert.ok(img, "hero frame has no image");
   const src = img.match(/\bsrc="([^"]*)"/)?.[1] ?? "";
   const srcset = img.match(/\bsrcset="([^"]*)"/)?.[1] ?? "";
   assert.ok(
     src.includes("/portfolio/indiba-icc/home-hero.jpg") || srcset.includes("/portfolio/indiba-icc/home-hero.jpg"),
     `hero image does not reference /portfolio/indiba-icc/home-hero.jpg (src: ${src})`,
   );
-  const caption = (html.match(/<figure class="hero-media">[\s\S]*?<figcaption>([\s\S]*?)<\/figcaption>/)?.[1] ?? "").replace(
-    /<!--[\s\S]*?-->/g,
-    "",
-  ).trim();
-  assert.ok(caption.startsWith("INDIBA"), `hero figcaption ${caption} does not start with INDIBA`);
+  const hx = html.match(/<div class="hx"[\s\S]*?<\/div>/)?.[0] ?? "";
+  const firstButton = hx.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+  assert.ok(firstButton.includes("INDIBA"), "the first entry in the frame index is not INDIBA");
   assert.ok(!html.includes("/portfolio/dr-lewinn/hero.jpg"), "home page still references the Dr. LeWinn's text-covered frame");
 });
 
