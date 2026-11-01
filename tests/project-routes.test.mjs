@@ -49,7 +49,7 @@ test("slug lookups fail loudly instead of rendering undefined", async () => {
 test("each exported case study page renders the project its URL names", async () => {
   const cleared = await publicSlugs();
   const exported = (await caseStudyEntries()).filter(({ slug }) => includeInternal || cleared.has(slug));
-  assert.equal(exported.length, includeInternal ? 36 : cleared.size);
+  assert.equal(exported.length, includeInternal ? 41 : cleared.size);
   for (const { slug, client } of exported) {
     const html = await readFile(new URL(`../dist/client/work/${slug}/index.html`, import.meta.url), "utf8");
     const title = html.match(/<title>([^<]*)<\/title>/)?.[1].replaceAll("&amp;", "&").replaceAll("&#x27;", "'").replaceAll("&#39;", "'");

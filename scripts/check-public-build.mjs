@@ -23,11 +23,17 @@ export const knownMissingMedia = [
   "/portfolio/spin-panda/film.mp4",
   "/portfolio/indiba-icc/film.mp4",
   "/portfolio/dr-lewinn/jade-interview.mp4",
-  "/portfolio/geely/launch-film.m4v",
+  "/portfolio/geely/ee-show-film.mp4",
   "/portfolio/stasis/brand-film.m4v",
   "/portfolio/jo-loves/film.mp4",
   "/portfolio/dr-lewinn/ceo-interview.mp4",
   "/portfolio/dr-lewinn/anniversary-film.mp4",
+  "/portfolio/bentley/kiama-film.mp4",
+  "/portfolio/tiktok/film.mp4",
+  "/portfolio/srw/film.mp4",
+  "/portfolio/dreame/film.mp4",
+  "/portfolio/narwal/film.mp4",
+  "/portfolio/inner-health/film.mp4",
 ];
 
 // Founder decisions, docs/DECISIONS.md (2026-10-31): .work is built until .com.au

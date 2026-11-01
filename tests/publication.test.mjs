@@ -36,31 +36,35 @@ async function publicationRecords() {
   return new Map([...source.matchAll(/^ {2}"([a-z0-9-]+)": record\("(public|internal-review)"/gm)].map(([, slug, status]) => [slug, status]));
 }
 
-// Slugs both handoff documents list as publicly authorised (audit section 5 table, HANDOFF.md section 6b).
-// A case is only evidenced if both agree.
+// Slugs both handoff documents list as publicly authorised (audit section 5 table, HANDOFF.md section 6b), plus
+// the slugs in backticks on the docs/DECISIONS.md line starting with "- 公开 slug：" (founder decision 2026-11-01).
+// A case is only evidenced if both documents agree or the founder made it public on the record.
 async function evidencedSlugs() {
-  const [audit, summary] = await Promise.all([
+  const [audit, summary, decisions] = await Promise.all([
     readFile(join(root, "docs/HANDOFF-2026-10-17-CLAUDE.md"), "utf8"),
     readFile(join(root, "HANDOFF.md"), "utf8"),
+    readFile(join(root, "docs/DECISIONS.md"), "utf8"),
   ]);
   const section5 = audit.split("## 5.")[1].split("\n## ")[0];
   const fromAudit = [...section5.matchAll(/^\| `([a-z0-9-]+)` \| 已授权可公开/gm)].map(([, slug]) => slug);
   const summaryLine = summary.split("\n").find((line) => line.startsWith("仓库里保留的图片"));
   const fromSummary = [...summaryLine.matchAll(/`([a-z0-9-]+)`/g)].map(([, slug]) => slug);
-  return fromAudit.filter((slug) => fromSummary.includes(slug)).sort();
+  const decisionsLine = decisions.split("\n").find((line) => line.startsWith("- 公开 slug："));
+  const fromDecisions = [...(decisionsLine ?? "").matchAll(/`([a-z0-9-]+)`/g)].map(([, slug]) => slug);
+  return [...new Set([...fromAudit.filter((slug) => fromSummary.includes(slug)), ...fromDecisions])].sort();
 }
 
 test("every case study has exactly one publication record", async () => {
   const slugs = (await caseStudies()).map((project) => project.slug).sort();
   const records = await publicationRecords();
-  assert.equal(slugs.length, 36);
+  assert.equal(slugs.length, 41);
   assert.deepEqual([...records.keys()].sort(), slugs);
 });
 
-test("only cases both handoff documents authorise are public", async () => {
+test("only documented cases are public", async () => {
   const records = await publicationRecords();
   const publicSlugs = [...records].filter(([, status]) => status === "public").map(([slug]) => slug).sort();
-  assert.deepEqual(await evidencedSlugs(), ["dr-lewinn", "indiba-icc", "jo-loves", "mm-karaoke", "nvidia", "spin-panda"]);
+  assert.deepEqual(await evidencedSlugs(), ["bentley", "dr-lewinn", "dreame", "geely-australia", "indiba-icc", "inner-health", "jo-loves", "mm-karaoke", "narwal", "nvidia", "spin-panda", "srw", "tiktok"]);
   for (const slug of publicSlugs) assert.ok((await evidencedSlugs()).includes(slug), `${slug} is public without documented authorisation`);
 });
 
@@ -172,9 +176,9 @@ test("featured cases are public, flagged provisional until the founder chooses, 
   assert.match(source, /featured: status === "public"/);
   assert.match(source, /featuredProvisional: status === "public"/);
   const records = await publicationRecords();
-  // Public cases the founder explicitly kept off the home page (docs/DECISIONS.md, 2026-10-31).
-  const notFeatured = new Set([...source.matchAll(/^ {2}"([a-z0-9-]+)": record\("public",[^\n]*featured: false/gm)].map(([, slug]) => slug));
-  assert.deepEqual([...notFeatured], ["spin-panda"]);
+  // Public cases the founder explicitly kept off the home page (docs/DECISIONS.md, 2026-11-01).
+  const notFeatured = new Set([...source.matchAll(/^ {2}"([a-z0-9-]+)": record\("public",[^\n]*(?:OFF_HOME|featured: false)/gm)].map(([, slug]) => slug));
+  assert.deepEqual([...notFeatured].sort(), ["bentley", "jo-loves", "mm-karaoke", "nvidia", "spin-panda"]);
   const featured = [...records].filter(([slug, status]) => status === "public" && !notFeatured.has(slug)).map(([slug]) => slug);
   const home = await readFile(join(dist, "index.html"), "utf8");
   const listed = [...home.matchAll(/class="featured-project [^"]*" href="\/work\/([a-z0-9-]+)\/"/g)].map(([, slug]) => slug);

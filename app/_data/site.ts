@@ -9,6 +9,16 @@ export type CaseStudy = {
   alt: string;
   /** Optional image for the home page hero; falls back to `image` / `alt`. */
   homeImage?: { src: string; alt: string; position?: string };
+  /** Home page card (founder selection 2026-11-01): short name, the line under it, deliverables and its photos. */
+  home?: {
+    name?: string;
+    what: string;
+    deliverables: string;
+    image: { src: string; alt: string; position?: string };
+    inset?: { src: string; alt: string; position?: string };
+    /** A figure set large beside the case, e.g. an anniversary. */
+    number?: string;
+  };
   scope: string;
   summary: string;
   challenge: string;
@@ -36,19 +46,22 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: "geely-australia",
     client: "Geely Australia",
-    category: "Long-term visual production",
+    category: "Motor shows & launches",
     discipline: "Film + production",
     image: "/portfolio/geely/hero.jpg",
     alt: "A silver Geely SUV photographed above Sydney Harbour at dusk",
     scope: "Production coordination, photography, cinematography and post-production.",
-    summary: "A responsive production partner across launches, live events, social content and TikTok Live anniversary coverage.",
+    summary: "A responsive production partner across motor shows, launches, live events, social content and TikTok Live anniversary coverage.",
     challenge: "A long-term brand relationship needs consistency without becoming rigid. Each launch, event and social brief brings a different schedule, scale and production need.",
     response: "First Rec. works directly with Geely Australia, changing roles around the brief. Large events centre on production coordination and photography, while ongoing content can include cinematography and post-production.",
-    outcome: "The reviewed archive spans launch coverage, exhibition storytelling, interviews, social formats and location photography across a long-term production relationship.",
+    outcome: "Coverage across four motor shows and a run of launches: films in 16:9 and 9:16, subtitled interviews and more than 600 photographs.",
     channels: "Launches / Large events / Social / TikTok Live",
     role: "Coordination / Photography / Cinematography / Post",
-    mediaNotice: "Internal review assets / Publication clearance pending",
+    mediaNotice: "Public display authorised / Direct client project",
     gallery: [
+      { image: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show", ratio: "3 / 2" },
+      { image: "/portfolio/geely/show-stand.jpg", alt: "Visitors inside a Geely on the show stand", ratio: "3 / 2" },
+      { image: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor", ratio: "3 / 2" },
       {
         image: "/portfolio/geely/coastal-drive.jpg",
         alt: "A Geely vehicle driving across a curved coastal bridge",
@@ -71,9 +84,16 @@ export const caseStudies: CaseStudy[] = [
       },
     ],
     film: {
-      src: "/portfolio/geely/launch-film.m4v",
-      poster: "/portfolio/geely/hero.jpg",
-      title: "Geely Australia launch film",
+      src: "/portfolio/geely/ee-show-film.mp4",
+      poster: "/portfolio/geely/ee-show-film-poster.jpg",
+      title: "Geely at Everything Electric Sydney 2026",
+    },
+    home: {
+      name: "Geely",
+      what: "Motor shows & launches, Sydney + Melbourne",
+      deliverables: "Four shows. Films in 16:9 and 9:16, subtitled interviews, 600+ photographs.",
+      image: { src: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show", position: "60% 50%" },
+      inset: { src: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor" },
     },
   },
   {
@@ -141,18 +161,18 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: "bentley",
     client: "Bentley",
-    category: "Automotive image study",
-    discipline: "Photography",
+    category: "Creator content / Automotive",
+    discipline: "Film + production",
     image: "/portfolio/bentley/hero.jpg",
     alt: "A woman driving a red Bentley through a sunlit landscape, framed through the side window",
-    scope: "Photography selection and web presentation.",
-    summary: "A compact automotive stills selection built from the supplied work archive.",
-    challenge: "The supplied folder contains seven frames across hero, driving, interior and portrait compositions, with project details still to be confirmed.",
-    response: "The draft keeps one wide hero and four complementary images so the existing case-study layout can hold both landscape and portrait views without repeating the same frame.",
-    outcome: "A review-ready visual set for discussion. Project date, location, credits, role and publication permission remain to be confirmed.",
-    channels: "Automotive / Brand imagery",
-    role: "Photography / Public credits to confirm",
-    mediaNotice: "Internal review assets / Project details and publication clearance pending",
+    scope: "Creator film and photography.",
+    summary: "A creator film and stills for Bentley, shot on the coast at Kiama.",
+    challenge: "A creator collaboration for Bentley that needed a short film and a set of stills from one day on location.",
+    response: "First Rec. filmed and photographed the drive and the stops along the way, then cut the film in 16:9 and 9:16.",
+    outcome: "An 81-second film in 16:9 and 9:16 and a set of stills.",
+    channels: "Automotive / Creator content / Film / Photography",
+    role: "Filming / Photography / Editing",
+    mediaNotice: "Public display authorised / Creator collaboration",
     gallery: [
       {
         image: "/portfolio/bentley/sunset-hero.jpg",
@@ -175,6 +195,11 @@ export const caseStudies: CaseStudy[] = [
         ratio: "3 / 4",
       },
     ],
+    film: {
+      src: "/portfolio/bentley/kiama-film.mp4",
+      poster: "/portfolio/bentley/kiama-film-poster.jpg",
+      title: "Bentley creator film, Kiama",
+    },
   },
   {
     slug: "eimele",
@@ -908,6 +933,12 @@ export const caseStudies: CaseStudy[] = [
         title: "Jade Peak interview film",
       },
     ],
+    home: {
+      what: "35th anniversary",
+      deliverables: "Anniversary film and two interviews, each in subtitled and subtitle-free versions.",
+      image: { src: "/portfolio/dr-lewinn/lead.jpg", alt: "The heritage archive room from Dr. LeWinn's 35th anniversary film" },
+      number: "35",
+    },
   },
   {
     slug: "indiba-icc",
@@ -960,6 +991,11 @@ export const caseStudies: CaseStudy[] = [
       src: "/portfolio/indiba-icc/film.mp4",
       poster: "/portfolio/indiba-icc/film-poster.jpg",
       title: "INDIBA exhibition film",
+    },
+    home: {
+      what: "Beauty Expo Australia stand",
+      deliverables: "Exhibition film, photography, vertical vox-pops.",
+      image: { src: "/portfolio/indiba-icc/hero.jpg", alt: "Treatment demo on the INDIBA stand", position: "56% 50%" },
     },
   },
   {
@@ -1090,6 +1126,138 @@ export const caseStudies: CaseStudy[] = [
         ratio: "3 / 2",
       },
     ],
+  },
+  {
+    slug: "tiktok",
+    client: "TikTok",
+    category: "Live events / Highlight films",
+    discipline: "Film + production",
+    image: "/portfolio/tiktok/hero.jpg",
+    alt: "A guest signs the TikTok LIVE wall in Sydney",
+    scope: "Event filming and highlight edits in 16:9 and 9:16.",
+    summary: "Highlight films for the TikTok LIVE Creator Summit and Creators Party in Sydney.",
+    challenge: "Two TikTok LIVE events in Sydney: a creator summit at the TikTok office and a creators party on the harbour. Each needed a recap that works on a wide screen and in a vertical feed.",
+    response: "First Rec. filmed both events and cut highlight films in 16:9 and 9:16, delivered through an agency partner.",
+    outcome: "Highlight films in 16:9 and 9:16, ready for a wide screen and a vertical feed.",
+    channels: "Live events / Social / Film",
+    role: "Filming / Editing / Through an agency partner",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/tiktok/summit.jpg", alt: "Guests at the TikTok LIVE Creator Summit", ratio: "16 / 9" },
+      { image: "/portfolio/tiktok/creators-party.jpg", alt: "Creators celebrating at the TikTok LIVE Creators Party", ratio: "9 / 16" },
+    ],
+    film: { src: "/portfolio/tiktok/film.mp4", poster: "/portfolio/tiktok/film-poster.jpg", title: "TikTok LIVE Creator Summit highlight film" },
+    home: {
+      what: "TikTok LIVE Creator Summit + Creators Party, Sydney",
+      deliverables: "Highlight films in 16:9 and 9:16.",
+      image: { src: "/portfolio/tiktok/hero.jpg", alt: "A guest signs the TikTok LIVE wall in Sydney", position: "72% 50%" },
+      inset: { src: "/portfolio/tiktok/summit.jpg", alt: "Guests at the TikTok LIVE Creator Summit" },
+    },
+  },
+  {
+    slug: "srw",
+    client: "SRW Laboratories",
+    category: "Brand launch / Film + photography",
+    discipline: "Film + production",
+    image: "/portfolio/srw/hero.jpg",
+    alt: "Group photo by the pool at Bondi Icebergs for the SRW launch",
+    scope: "Launch films in English and event photography.",
+    summary: "A brand launch at Bondi Icebergs, filmed and photographed from the poolside programme to the evening.",
+    challenge: "SRW Laboratories launched at Bondi Icebergs with a day programme by the pool, founder and guest speakers, and an evening event. The launch needed films in English and a full photo record.",
+    response: "First Rec. ran a multi-camera crew with drone coverage through the day and into the night, then cut a set of launch films in English. Delivered through an agency partner.",
+    outcome: "Launch films in English and event photography covering the pool, the speakers and the night.",
+    channels: "Brand launch / Event / Film / Photography",
+    role: "Filming / Photography / Editing / Through an agency partner",
+    date: "2024",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/srw/film.mp4", poster: "/portfolio/srw/film-poster.jpg", title: "SRW Laboratories launch film" },
+    home: {
+      name: "SRW",
+      what: "Brand launch, Bondi Icebergs",
+      deliverables: "Launch films in English, event photography.",
+      image: { src: "/portfolio/srw/hero.jpg", alt: "Group photo by the pool at Bondi Icebergs for the SRW launch", position: "50% 62%" },
+      inset: { src: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch" },
+    },
+  },
+  {
+    slug: "dreame",
+    client: "Dreame",
+    category: "Brand event / Event film",
+    discipline: "Film + production",
+    image: "/portfolio/dreame/hero.jpg",
+    alt: "Guests in front of the DREAME letter wall",
+    scope: "Event recap film.",
+    summary: "A recap film of Dreame's brand event in Melbourne.",
+    challenge: "Dreame's brand event brought keynotes, product displays and guests into one space.",
+    response: "First Rec. filmed the event and cut a recap film that moves from the keynote to the product floor.",
+    outcome: "An event recap film in 16:9 and 9:16.",
+    channels: "Brand event / Film",
+    role: "Filming / Editing",
+    mediaNotice: "Public display authorised / Event recap",
+    gallery: [
+      { image: "/portfolio/dreame/keynote.jpg", alt: "A speaker on stage at the Dreame brand event", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/dreame/film.mp4", poster: "/portfolio/dreame/showroom.jpg", title: "Dreame brand event recap film" },
+    home: {
+      what: "Brand event",
+      deliverables: "Event recap film.",
+      image: { src: "/portfolio/dreame/hero.jpg", alt: "Guests in front of the DREAME letter wall", position: "52% 50%" },
+    },
+  },
+  {
+    slug: "narwal",
+    client: "Narwal",
+    category: "Product launch / Event film",
+    discipline: "Film + production",
+    image: "/portfolio/narwal/hero.jpg",
+    alt: "A yacht on Sydney Harbour by the Opera House for the Narwal FLOW launch",
+    scope: "Launch film and highlight cut.",
+    summary: "Narwal's FLOW launch on Sydney Harbour, from the product reveal to the guests.",
+    challenge: "Narwal launched its FLOW range in Sydney with a harbourside event, product demonstrations and presentations for guests.",
+    response: "First Rec. filmed the launch, including the harbour from the air, and cut a three-minute launch film and a highlight cut. Delivered through an agency partner.",
+    outcome: "A three-minute launch film and a highlight cut of the FLOW launch.",
+    channels: "Product launch / Event / Film",
+    role: "Filming / Editing / Through an agency partner",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/narwal/flow.jpg", alt: "The Narwal FLOW range on display at the Sydney launch", ratio: "16 / 9" },
+      { image: "/portfolio/narwal/guests.jpg", alt: "Guests watching a presentation at the Narwal launch", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/narwal/film.mp4", poster: "/portfolio/narwal/film-poster.jpg", title: "Narwal FLOW launch highlight film" },
+    home: {
+      what: "FLOW launch on Sydney Harbour",
+      deliverables: "Launch film and highlight cut.",
+      image: { src: "/portfolio/narwal/hero.jpg", alt: "A yacht on Sydney Harbour by the Opera House for the Narwal FLOW launch", position: "30% 50%" },
+    },
+  },
+  {
+    slug: "inner-health",
+    client: "Inner Health",
+    category: "Corporate film",
+    discipline: "Film + production",
+    image: "/portfolio/inner-health/hero.jpg",
+    alt: "A scientist at work in the Inner Health lab",
+    scope: "Corporate film with short cuts and a Mandarin-subtitled version.",
+    summary: "A corporate film on Inner Health's science, from the lab to the product.",
+    challenge: "Inner Health needed one film that explains its research and manufacturing, with versions for different screens and for Mandarin-speaking audiences.",
+    response: "First Rec. filmed in the lab and around the facility, then delivered a four-minute film, 59-second cuts in 16:9 and 9:16, and a Mandarin-subtitled version.",
+    outcome: "A four-minute film, 59-second cuts in 16:9 and 9:16 and a Mandarin-subtitled version.",
+    channels: "Corporate / Film",
+    role: "Filming / Editing",
+    mediaNotice: "Public display authorised / Corporate film",
+    gallery: [
+      { image: "/portfolio/inner-health/facility.jpg", alt: "An aerial view of the Inner Health facility", ratio: "16 / 9" },
+      { image: "/portfolio/inner-health/products.jpg", alt: "Inner Health probiotic products", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/inner-health/film.mp4", poster: "/portfolio/inner-health/film-poster.jpg", title: "Inner Health 59-second film" },
+    home: {
+      what: "Corporate film",
+      deliverables: "4-minute film, 59-second cuts in 16:9 and 9:16, Mandarin-subtitled version.",
+      image: { src: "/portfolio/inner-health/hero.jpg", alt: "A scientist at work in the Inner Health lab", position: "76% 50%" },
+    },
   },
   {
     slug: "emp-dairy-lactoferrin",

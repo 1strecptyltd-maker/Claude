@@ -20,6 +20,13 @@ const pages = [
   ["work/jo-loves/index.html", /Jo Loves/],
   ["work/mm-karaoke/index.html", /MM Karaoke/],
   ["work/nvidia/index.html", /NVIDIA/],
+  ["work/geely-australia/index.html", /Geely Australia/],
+  ["work/bentley/index.html", /Bentley/],
+  ["work/tiktok/index.html", /TikTok/],
+  ["work/srw/index.html", /SRW Laboratories/],
+  ["work/dreame/index.html", /Dreame/],
+  ["work/narwal/index.html", /Narwal/],
+  ["work/inner-health/index.html", /Inner Health/],
   ["services/index.html", /The right production/],
   ["about/index.html", /First Rec\.|Cheese/],
   ["equipment/index.html", /Production equipment/],
@@ -27,10 +34,8 @@ const pages = [
 ];
 
 const internalPages = [
-  ["work/geely-australia/index.html", /Geely Australia/],
   ["work/molly-tea/index.html", /Molly Tea/],
   ["work/stasis-clinic/index.html", /Stasis Clinic/],
-  ["work/bentley/index.html", /Bentley/],
   ["work/eimele/index.html", /Eimele/],
   ["work/chongguang-workshop/index.html", /Chongguang Workshop/],
   ["work/hatman/index.html", /Hatman/],
@@ -101,7 +106,7 @@ test("renders reviewed internal media without presenting Molly Tea placeholders 
     read("work/index.html"),
   ]);
 
-  assert.match(geely, /launch-film\.m4v/);
+  assert.match(geely, /ee-show-film\.mp4/);
   assert.match(molly, /opening-film\.mov/);
   assert.match(molly, /portfolio\/molly-tea\/hero\.jpg/);
   assert.match(molly, /video\/quicktime/);
@@ -127,14 +132,14 @@ test("renders reviewed internal media without presenting Molly Tea placeholders 
 
 test("public work index lists only cleared cases and drops empty categories", { skip: includeInternal && "internal-review preview build" }, async () => {
   const [work, home] = await Promise.all([read("work/index.html"), read("index.html")]);
-  for (const name of ["Geely", "Molly Tea", "Bentley", "Eimele", "Chongguang Workshop", "Hatman", "MalayMalay", "Mirror", "Stasis", "EMP Dairy"]) {
+  for (const name of ["Molly Tea", "Eimele", "Chongguang Workshop", "Hatman", "MalayMalay", "Mirror", "Stasis", "EMP Dairy"]) {
     assert.doesNotMatch(work, new RegExp(name));
     assert.doesNotMatch(home, new RegExp(name));
   }
   assert.doesNotMatch(work, /Food \+ menu|id="food-menu"/);
   assert.doesNotMatch(work, /clearance is pending|internal review/i);
-  // Six public cases; Spin Panda stays public but off the home page selection (docs/DECISIONS.md, 2026-10-31).
-  assert.equal(home.match(/class="featured-project /g)?.length, 5);
+  // Eight featured cases; Spin Panda and the other 2026-11-01 off-home cases stay public but off the home page (docs/DECISIONS.md, 2026-11-01).
+  assert.equal(home.match(/class="featured-project /g)?.length, 8);
   assert.doesNotMatch(home, /href="\/work\/spin-panda\/"/);
   assert.match(work, /href="\/work\/spin-panda\/"/);
 });
@@ -205,10 +210,11 @@ test("renders the four authorised locally ingested projects with their selected 
 
   assert.match(food, /MM Karaoke/);
 
+  // Jo Loves, MM Karaoke and NVIDIA stay on the work index but left the home page selection (docs/DECISIONS.md, 2026-11-01).
   for (const name of ["INDIBA", "Jo Loves", "MM Karaoke", "NVIDIA"]) {
     assert.match(work, new RegExp(name));
-    assert.match(home, new RegExp(name));
   }
+  assert.match(home, /INDIBA/);
 });
 
 test("keeps EMP Dairy / Lactoferrin in internal review with its films held back", internalOnly, async () => {

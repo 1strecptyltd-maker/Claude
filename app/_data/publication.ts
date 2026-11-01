@@ -14,9 +14,8 @@ export type PublicationRecord = {
   order: number | null;
 };
 
-// Placeholder until the founder picks 6-8 featured cases (docs/DECISIONS.md, 2026-10-31): every public case is
-// featured in its current order and flagged provisional. With fewer than 6 public cases, show only those; never pad.
-// `overrides` records an explicit founder decision for one case, which is no longer provisional.
+// Founder decision 2026-11-01 (docs/DECISIONS.md): eight cases on the home page in a fixed order; other public
+// cases stay off it. `overrides` records each explicit decision; the defaults below only apply to cases without one.
 const record = (status: PublicationStatus, evidence: string, overrides: Partial<PublicationRecord> = {}): PublicationRecord => ({
   status,
   evidence,
@@ -32,13 +31,16 @@ const PENDING = `${AUDIT}: internal review, publication clearance pending`;
 const DRIVE_CSV = `${PENDING}; the 2026-08-15 Drive CSV approved ingestion only (docs/PORTFOLIO-INGESTION-2026-08-15-GOOGLE-DRIVE.md)`;
 const LOCAL_2026_09_01 = `${SUMMARY}; ${AUDIT}; docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md records the user's explicit public-display instruction. Credits and project details still to confirm`;
 const FOUNDER_CONFIRMED = `${SUMMARY}; ${AUDIT} lists it as authorised from the existing marker; the founder confirmed public display on 2026-10-31 (docs/DECISIONS.md). No written client approval is stored in the repo`;
+const FOUNDER_2026_11_01 = "docs/DECISIONS.md 2026-11-01: the founder made this case public, following the 2026-10-23 decision that the whole portfolio may be published";
+const HOME_2026_11_01 = { featured: true, featuredProvisional: false } as const;
+const OFF_HOME = { featured: false, featuredProvisional: false } as const;
 
 // Every case study needs a record here. Anything not explicitly cleared stays internal-review.
 export const publication: Record<string, PublicationRecord> = {
-  "geely-australia": record("internal-review", PENDING),
+  "geely-australia": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 1 }),
   "molly-tea": record("internal-review", PENDING),
   "stasis-clinic": record("internal-review", PENDING),
-  "bentley": record("internal-review", PENDING),
+  "bentley": record("public", FOUNDER_2026_11_01, OFF_HOME),
   "eimele": record("internal-review", PENDING),
   "chongguang-workshop": record("internal-review", PENDING),
   "hatman": record("internal-review", PENDING),
@@ -66,11 +68,16 @@ export const publication: Record<string, PublicationRecord> = {
   "zhongchu-dim-sum": record("internal-review", DRIVE_CSV),
   "bengong-yangmei": record("internal-review", DRIVE_CSV),
   "sweet-lu": record("internal-review", DRIVE_CSV),
-  "dr-lewinn": record("public", `${FOUNDER_CONFIRMED}. The direct-client claim applies to this project only`),
-  "indiba-icc": record("public", LOCAL_2026_09_01),
-  "jo-loves": record("public", LOCAL_2026_09_01),
-  "mm-karaoke": record("public", LOCAL_2026_09_01),
-  "nvidia": record("public", LOCAL_2026_09_01),
+  "dr-lewinn": record("public", `${FOUNDER_CONFIRMED}. The direct-client claim applies to this project only`, { ...HOME_2026_11_01, order: 4 }),
+  "indiba-icc": record("public", LOCAL_2026_09_01, { ...HOME_2026_11_01, order: 7 }),
+  "jo-loves": record("public", LOCAL_2026_09_01, OFF_HOME),
+  "mm-karaoke": record("public", LOCAL_2026_09_01, OFF_HOME),
+  "nvidia": record("public", LOCAL_2026_09_01, OFF_HOME),
+  "tiktok": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 2 }),
+  "srw": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 3 }),
+  "dreame": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 5 }),
+  "narwal": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 6 }),
+  "inner-health": record("public", FOUNDER_2026_11_01, { ...HOME_2026_11_01, order: 8 }),
   "emp-dairy-lactoferrin": record("internal-review", `${PENDING}; docs/PORTFOLIO-INGESTION-2026-09-01-LOCAL.md: later addition, outside the four-project authorisation`),
 };
 
