@@ -56,6 +56,10 @@
 - 委托关系：TikTok、SRW、Narwal、Coach 都经 agency 接单，案例页写 agency partner，不写直客。Dreame、Inner Health 的委托关系待确认，页面暂不写。
 - Hennessy：成片库里的 Hennessy 竖屏片是客户提供的混剪素材，不是 First Rec. 拍摄的。全站不使用这条片，也不写 Hennessy 现场。
 - 首页精选 8 个，顺序为：Geely、TikTok、SRW、Dr. LeWinn's、Dreame、Narwal、INDIBA、Inner Health。Spin Panda、Jo Loves、MM Karaoke、NVIDIA、Bentley 保持公开，但不进首页精选。
-- 首页竖屏区 6 支：Bentley、Coach、Bvlgari、Range Rover、TikTok Creators Party、Geely EE Show 2026。作品页再加 MG、Cartier、TikTok Creator Summit、Dangerously Modern，共 10 支。Dior 确认交付版之前不放。
+- 首页竖屏区 6 支：Bentley、Coach、Bvlgari、Range Rover、TikTok Creators Party、Geely EE Show 2026。作品页再加 MG、TikTok Creator Summit、Dangerously Modern，共 9 支（Cartier 已于 11-02 撤下，见下）。Dior 确认交付版之前不放。
 - 英文文案先用草稿，上线前由创始人统一修改。
 - 公开 slug：`geely-australia`、`bentley`、`tiktok`、`srw`、`dreame`、`narwal`、`inner-health`。
+
+### 2026-11-02 撤下 Cartier 竖屏片
+
+- 创始人确认 Cartier 那条竖屏片不是 First Rec. 制作的，全站不使用，和 Hennessy 同样处理。作品页 short-form 区改为 9 支。

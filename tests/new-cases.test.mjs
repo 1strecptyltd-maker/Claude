@@ -67,11 +67,11 @@ test("every home page case has a home block whose media is committed", async () 
   }
 });
 
-test("shorts.ts lists ten films, six of them on the home row, and the hero reel order", async () => {
+test("shorts.ts lists nine films, six of them on the home row, and the hero reel order", async () => {
   const source = await readFile(join(root, "app/_data/shorts.ts"), "utf8");
   const films = [...source.matchAll(/film\("([a-z0-9-]+)", "(?:[^"]+)", "(?:[^"]+)", "(\d:\d{2})", (true|false)\)/g)].map(([, slug, duration, home]) => ({ slug, duration, home: home === "true" }));
-  assert.equal(films.length, 10);
-  assert.equal(new Set(films.map((film) => film.slug)).size, 10, "short film slugs must be unique");
+  assert.equal(films.length, 9);
+  assert.equal(new Set(films.map((film) => film.slug)).size, 9, "short film slugs must be unique");
   for (const film of films) {
     assert.match(film.duration, /^\d:\d{2}$/);
     assert.ok(existsSync(join(root, "public/shorts", film.slug, "poster.jpg")), `public/shorts/${film.slug}/poster.jpg is missing`);
@@ -93,5 +93,21 @@ test("the Hennessy film is client footage and appears nowhere on the site", asyn
   for (const file of files) {
     const text = await readFile(file, "utf8");
     assert.doesNotMatch(text, /hennessy/i, `${file} mentions Hennessy`);
+  }
+});
+
+test("the Cartier film is not First Rec. work and appears nowhere on the site", async () => {
+  const [site, shorts] = await Promise.all([
+    readFile(join(root, "app/_data/site.ts"), "utf8"),
+    readFile(join(root, "app/_data/shorts.ts"), "utf8"),
+  ]);
+  assert.doesNotMatch(site, /cartier/i);
+  assert.doesNotMatch(shorts, /cartier/i);
+  assert.ok(!existsSync(join(dist, "shorts/cartier")), "dist/client/shorts/cartier exists");
+  const files = (await walk(dist)).filter((file) => /\.(html|rsc|js|css|json)$/.test(file));
+  assert.ok(files.length > 0, "dist/client/ has not been built; run npm test");
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    assert.doesNotMatch(text, /cartier/i, `${file} mentions Cartier`);
   }
 });
