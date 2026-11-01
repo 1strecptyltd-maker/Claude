@@ -4,15 +4,16 @@ The site exports as plain static files. It can be hosted by Synology Web Station
 
 ## Option 1: upload the static folder
 
-1. Run `npm ci` on a computer with Node.js 22.13 or newer, then build the public export and run the pre-upload check before uploading:
+1. **Videos (not in Git).** The web videos live outside Git (`*.mp4` is ignored); where the media folder is kept is up to the founder. Run `bash scripts/sync-media.sh <media-dir>` (with `--dry-run` first) in the build checkout to copy them into its `public/`: the `public/portfolio/<case>/` films and the `public/shorts/<slug>/` previews and full films. The script itself reports any missing short-form video, and `npm run check:public` reports any missing case film.
+2. Run `npm ci` on a computer with Node.js 22.13 or newer, then build the public export and run the pre-upload check before uploading:
 
    ```sh
    env -u FIRST_REC_INCLUDE_INTERNAL NEXT_PUBLIC_SITE_URL=https://www.firstrec.work NEXT_PUBLIC_CONTACT_EMAIL=info@firstrec.com.au npm run build
    npm run check:public -- --expect-site-url=https://www.firstrec.work
    ```
 
-2. Upload everything inside `dist/client/` to the web root on the NAS.
-3. Point the NAS web service or reverse proxy at that folder.
+3. Upload everything inside `dist/client/` to the web root on the NAS.
+4. Point the NAS web service or reverse proxy at that folder.
 
 The export uses directory-style routes such as `work/index.html`, so clean URLs work without a Node.js server.
 
@@ -116,10 +117,15 @@ DEPLOY="/mnt/SSD POOL/codexdeploy/codexdeploy/cheese-portfolio"
    STAMP=$(date +%Y%m%d-%H%M%S); echo "$STAMP"
    ```
 
-2. On the NAS, back up the live export and config. On the very first deploy, before `deploy/nas-swap.sh` exists on the NAS, upload only the script itself from the build machine first and then run `backup` (`NAS` and `REMOTE` are defined as in step 3):
+2. On the NAS, back up the live export and config. On the very first deploy, before `deploy/nas-swap.sh` exists on the NAS, upload only the script itself from the build machine first and then run `backup` (`NAS` and `REMOTE` are defined as in step 3). On the Mac:
 
    ```sh
    COPYFILE_DISABLE=1 tar -cf - deploy/nas-swap.sh | ssh "$NAS" "tar -C '$REMOTE' -xf -"
+   ```
+
+   On the NAS:
+
+   ```sh
    sudo bash deploy/nas-swap.sh backup "$DEPLOY" <STAMP>
    ```
 
