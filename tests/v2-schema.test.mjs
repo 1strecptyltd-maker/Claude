@@ -120,18 +120,18 @@ describe("V2 schema against a throwaway PostgreSQL", { skip }, () => {
     assert.equal(must("select count(*) from pg_tables where schemaname = 'public' and not rowsecurity"), "0");
   });
 
-  test("seed loads twice without duplicating rows; all 36 projects are non-public", () => {
+  test("seed loads twice without duplicating rows; all 41 projects are non-public", () => {
     const seed = seedSql();
     must(seed);
     const counts = "select (select count(*) from projects), (select count(*) from project_facts), (select count(*) from media_assets), (select count(*) from project_media), (select count(*) from content_blocks), (select count(*) from rights_clearances), (select count(*) from collection_projects)";
     const first = must(counts);
     must(seed);
     assert.equal(must(counts), first);
-    assert.equal(must("select count(*) from projects"), "36");
+    assert.equal(must("select count(*) from projects"), "41");
     assert.equal(must("select count(*) from projects where publication_status <> 'internal' or published_at is not null"), "0");
     assert.equal(must("select count(*) from projects where legacy_media_notice is null"), "0");
-    // The six "Public display authorised" notices become unverified claims, not approvals.
-    assert.equal(must("select string_agg(distinct status::text, ',') || ':' || count(*) from rights_clearances"), "unverified_claim:6");
+    // The thirteen "Public display authorised" notices become unverified claims, not approvals.
+    assert.equal(must("select string_agg(distinct status::text, ',') || ':' || count(*) from rights_clearances"), "unverified_claim:13");
     assert.equal(must("select count(*) from media_assets where class <> 'derivative'"), "0");
     // Spin Panda keeps its modular layout; facts/credits items moved to their tables.
     assert.equal(must("select layout || ':' || (select count(*) from content_blocks b where b.project_id = p.id) from projects p where slug = 'spin-panda'"), "blocks:10");
@@ -270,7 +270,7 @@ describe("V2 schema against a throwaway PostgreSQL", { skip }, () => {
 
   test("authenticated access depends on the admin role", () => {
     assert.equal(asOk("authenticated", "select count(*) from projects", ids.stranger), "0");
-    assert.equal(asOk("authenticated", "select count(*) from projects", ids.editor), "36");
+    assert.equal(asOk("authenticated", "select count(*) from projects", ids.editor), "41");
     asOk("authenticated", "update projects set summary = summary || ' ' where slug = 'geely-australia'", ids.editor);
     asFails("authenticated", "update projects set publication_status = 'withdrawn' where slug = 'nvidia'", /only an owner/, ids.editor);
     asFails("authenticated", "insert into rights_clearances (project_id, kind, source) values ((select id from projects where slug = 'bentley'), 'public_display', 'editor')", /row-level security/, ids.editor);
