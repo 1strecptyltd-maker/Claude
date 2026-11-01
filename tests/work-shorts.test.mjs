@@ -12,7 +12,7 @@ const dist = join(root, "dist/client");
 const body = (html) => html.replace(/<script\b[\s\S]*?<\/script>/g, "");
 const readWork = async () => body(await readFile(join(dist, "work/index.html"), "utf8"));
 
-test("the work page short-form section lists all ten films in shorts.ts order", async () => {
+test("the work page short-form section lists all nine films in shorts.ts order", async () => {
   const [html, source] = await Promise.all([
     readWork(),
     readFile(join(root, "app/_data/shorts.ts"), "utf8"),
@@ -22,15 +22,15 @@ test("the work page short-form section lists all ten films in shorts.ts order", 
   assert.ok(section, "work page has no work-shorts section");
   const slugs = [...section.matchAll(/<button[^>]*class="reel-btn"[^>]*>/g)].map(([tag]) => tag.match(/data-slug="([^"]+)"/)?.[1]);
   const expected = [...source.matchAll(/film\("([a-z0-9-]+)"/g)].map(([, slug]) => slug);
-  assert.equal(expected.length, 10, "app/_data/shorts.ts no longer lists ten films");
-  assert.equal(slugs.length, 10, "the short-form section does not list ten films");
+  assert.equal(expected.length, 9, "app/_data/shorts.ts no longer lists nine films");
+  assert.equal(slugs.length, 9, "the short-form section does not list nine films");
   assert.deepEqual(slugs, expected);
 });
 
 test("every shorts poster the work page references ships in the export", async () => {
   const html = await readWork();
   const paths = [...new Set([...html.matchAll(/\/shorts\/[a-z0-9-]+\/poster\.jpg/g)].map(([path]) => path))];
-  assert.equal(paths.length, 10, "the work page does not reference ten short-film posters");
+  assert.equal(paths.length, 9, "the work page does not reference nine short-film posters");
   for (const path of paths) {
     assert.ok(existsSync(join(dist, path)), `dist/client${path} is missing`);
   }

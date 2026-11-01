@@ -33,7 +33,6 @@ export const shortFilms: ShortFilm[] = [
   film("tiktok-creators-party", "TikTok", "Creators Party", "1:41", true),
   film("geely-ee-show-2026", "Geely", "EE Show 2026", "0:31", true),
   film("mg", "MG", "Creator content", "0:49", false),
-  film("cartier", "Cartier", "Creator content", "1:51", false),
   film("tiktok-creator-summit", "TikTok", "Creator Summit", "0:31", false),
   film("dangerously-modern", "Dangerously Modern", "Brand content", "0:31", false),
 ];
