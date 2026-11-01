@@ -4,10 +4,15 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../dist/client/${path}`, import.meta.url), "utf8");
 
-test("contact band lead-ins are eyebrows on every page that shares the band", async () => {
+test("every page that shares the contact band renders the new band", async () => {
   for (const path of ["index.html", "services/index.html", "work/nvidia/index.html"]) {
     const html = await read(path);
-    assert.match(html, /<section class="contact-band"[^>]*>\s*<p class="eyebrow">Have a brief in motion\?<\/p>/, path);
+    const band = html.match(/<section class="contact-band"[\s\S]*?<\/section>/);
+    assert.ok(band, `${path}: contact band found`);
+    assert.ok(band[0].includes('class="contact-band-line">Bring us</span>'), `${path}: first band line`);
+    assert.ok(band[0].includes('class="contact-band-line">the goal.</span>'), `${path}: second band line`);
+    assert.ok(band[0].includes('<a class="contact-band-button" href="/contact/">Start a project</a>'), `${path}: band button`);
+    assert.ok(!html.includes("Have a brief in motion?"), `${path}: old eyebrow is gone`);
   }
 });
 

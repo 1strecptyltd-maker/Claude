@@ -67,7 +67,7 @@ test("keeps metadata, static export settings and accessibility fallbacks", async
   assert.match(layout, /summary_large_image/);
   assert.match(layout, /\/og-first-rec\.png/);
   assert.match(layout, /\/brand\/first-rec\/icon\.svg/);
-  assert.match(layout, /@fontsource-variable\/newsreader/);
+  assert.match(layout, /@fontsource-variable\/archivo/);
   assert.match(page, /hero-line/);
   assert.match(css, /@keyframes waterfall/);
   assert.match(css, /@keyframes curtain-up/);
