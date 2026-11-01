@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactBand } from "../_components/ContactBand";
 import { PageShell } from "../_components/PageShell";
+import { FilmPlayer } from "../_components/home/FilmPlayer";
+import { ShortFilmRow } from "../_components/home/ShortFilmRow";
 import { includeInternal, listedCaseStudies } from "../_data/publication";
+import { shortFilms } from "../_data/shorts";
+import "./work-shorts.css";
 
 export const metadata: Metadata = { title: "Work | First Rec.", description: "Selected visual production relationships across brands, hospitality and live events." };
 export const dynamic = "force-static";
@@ -83,6 +87,12 @@ export default function WorkPage() {
           );
         })}
       </section>
+      <section className="work-shorts" id="short-form" aria-labelledby="work-shorts-heading">
+        <h2 id="work-shorts-heading">Short-form</h2>
+        <p>Vertical films for social, from brand events and creator collaborations.</p>
+        <ShortFilmRow films={shortFilms} className="reel-row--grid" />
+      </section>
+      <FilmPlayer />
       <ContactBand />
     </PageShell>
   );
