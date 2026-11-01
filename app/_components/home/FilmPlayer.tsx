@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import type { ShortFilm } from "../../_data/shorts";
-import "./short-films.css";
 
 type PlayDetail = { film: ShortFilm; opener: HTMLElement };
 

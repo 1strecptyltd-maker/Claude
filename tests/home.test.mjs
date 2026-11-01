@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -88,4 +88,16 @@ test("the why list keeps four items and links to the case pages", async () => {
   assert.equal((why.match(/<li\b/g) ?? []).length, 4);
   assert.match(why, /href="\/work\/tiktok\/"/);
   assert.match(why, /href="\/work\/inner-health\/"/);
+});
+
+test("every modulepreload in the export points at a shipped file", async () => {
+  const files = (await readdir(dist, { recursive: true })).filter((file) => file.endsWith(".html"));
+  assert.ok(files.length > 0, "the export contains no html files");
+  for (const file of files) {
+    const html = await readFile(join(dist, file), "utf8");
+    const hrefs = [...html.matchAll(/<link\b[^>]*\brel="modulepreload"[^>]*\bhref="([^"]+)"[^>]*>/g)].map(([, href]) => href);
+    for (const href of hrefs) {
+      assert.ok(existsSync(join(dist, href.replace(/^\//, ""))), `${file} preloads dist/client${href}, which is not shipped`);
+    }
+  }
 });
