@@ -35,21 +35,24 @@ test("the phone menu summary carries both its closed and open labels", async () 
   assert.match(html, /menu-label-open/);
 });
 
-test("the build ships the bundled Nunito Sans body font", async () => {
+test("the build ships the bundled Archivo fonts", async () => {
   const root = new URL("../dist/client/", import.meta.url);
   const files = await readdir(root, { recursive: true });
   const cssFiles = files.filter((file) => file.endsWith(".css"));
   assert.ok(cssFiles.length > 0, "no built css found");
-  let referenced = false;
-  for (const file of cssFiles) {
-    const css = await readFile(new URL(file, root), "utf8");
-    if (css.includes("Nunito Sans Variable")) {
-      referenced = true;
-      break;
-    }
+  const contents = await Promise.all(cssFiles.map((file) => readFile(new URL(file, root), "utf8")));
+  assert.ok(contents.some((css) => css.includes("Archivo Variable")), "no built css references Archivo Variable");
+  assert.ok(contents.some((css) => css.includes("Archivo Black")), "no built css references Archivo Black");
+  assert.ok(files.some((file) => file.endsWith(".woff2") && file.includes("archivo")), "no archivo woff2 shipped");
+});
+
+test("the footer uses the light wordmark and no current-page marker", async () => {
+  for (const path of ["index.html", "work/index.html"]) {
+    const footer = body(await read(path)).match(/<footer class="site-footer">[\s\S]*?<\/footer>/);
+    assert.ok(footer, `${path}: site footer found`);
+    assert.ok(footer[0].includes("/brand/first-rec/wordmark-light.svg"), `${path}: footer uses the light wordmark`);
+    assert.ok(!footer[0].includes("aria-current"), `${path}: footer has no current-page marker`);
   }
-  assert.ok(referenced, "no built css references Nunito Sans Variable");
-  assert.ok(files.some((file) => file.endsWith(".woff2") && file.includes("nunito-sans")), "no nunito-sans woff2 shipped");
 });
 
 test("English + Mandarin never breaks before the plus", async () => {
