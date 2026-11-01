@@ -58,3 +58,4 @@
 - 首页精选 8 个，顺序为：Geely、TikTok、SRW、Dr. LeWinn's、Dreame、Narwal、INDIBA、Inner Health。Spin Panda、Jo Loves、MM Karaoke、NVIDIA、Bentley 保持公开，但不进首页精选。
 - 首页竖屏区 6 支：Bentley、Coach、Bvlgari、Range Rover、TikTok Creators Party、Geely EE Show 2026。作品页再加 MG、Cartier、TikTok Creator Summit、Dangerously Modern，共 10 支。Dior 确认交付版之前不放。
 - 英文文案先用草稿，上线前由创始人统一修改。
+- 公开 slug：`geely-australia`、`bentley`、`tiktok`、`srw`、`dreame`、`narwal`、`inner-health`。
