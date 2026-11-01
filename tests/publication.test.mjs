@@ -165,7 +165,7 @@ test("vite.config.ts refuses a publication mode set in a dotenv file", async () 
 
 test("home hero uses a public case", async () => {
   const [home, records, projects] = await Promise.all([readFile(join(dist, "index.html"), "utf8"), publicationRecords(), caseStudies()]);
-  const heroImage = home.match(/<figure class="hero-media">[\s\S]*?<img[^>]*src="([^"]+)"/)?.[1];
+  const heroImage = home.match(/<figure class="hf is-on" data-kind="img">[\s\S]*?<img[^>]*src="([^"]+)"/)?.[1];
   const hero = projects.find((project) => project.media.some((path) => heroImage?.includes(path)));
   assert.ok(hero, `hero image ${heroImage} does not belong to a case study`);
   assert.equal(records.get(hero.slug), "public", `hero uses ${hero.slug}`);
@@ -181,7 +181,7 @@ test("featured cases are public, flagged provisional until the founder chooses, 
   assert.deepEqual([...notFeatured].sort(), ["bentley", "jo-loves", "mm-karaoke", "nvidia", "spin-panda"]);
   const featured = [...records].filter(([slug, status]) => status === "public" && !notFeatured.has(slug)).map(([slug]) => slug);
   const home = await readFile(join(dist, "index.html"), "utf8");
-  const listed = [...home.matchAll(/class="featured-project [^"]*" href="\/work\/([a-z0-9-]+)\/"/g)].map(([, slug]) => slug);
+  const listed = [...home.matchAll(/class="case-link" href="\/work\/([a-z0-9-]+)\/"/g)].map(([, slug]) => slug);
   assert.deepEqual(listed.sort(), featured.sort());
   assert.ok(!listed.includes("spin-panda"), "Spin Panda stays off the home page selection");
 });
