@@ -323,7 +323,7 @@ main:has(> .page-hero--fill) { min-height: 100dvh; display: flex; flex-direction
   .desktop-nav { display: none; }
   .mobile-menu { display: block; position: static; }
   .site-header:has(.mobile-menu[open]) { z-index: 101; }
-  .mobile-menu summary { min-width: 76px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin-right: -6px; padding: 0 14px; border: 3px solid var(--ink); list-style: none; cursor: pointer; font-size: 16px; font-weight: 800; }
+  .mobile-menu summary { position: relative; z-index: 101; min-width: 76px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; margin-right: -6px; padding: 0 14px; border: 3px solid var(--ink); list-style: none; cursor: pointer; font-size: 16px; font-weight: 800; }
   .mobile-menu summary::-webkit-details-marker { display: none; }
   .menu-label-open { display: none; }
   .mobile-menu[open] .menu-label-closed { display: none; }
