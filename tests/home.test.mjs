@@ -48,7 +48,7 @@ test("the short-form row offers the six home films in order", async () => {
 
 test("every jpg the page references ships in the export", async () => {
   const html = await readHome();
-  const paths = [...new Set([...html.matchAll(/\/(?:portfolio|shorts)\/[a-z0-9\-.\/]*?\.jpg/g)].map(([path]) => path))];
+  const paths = [...new Set([...html.matchAll(/\/(?:portfolio|shorts)\/[a-z0-9./-]*?\.jpg/g)].map(([path]) => path))];
   assert.ok(paths.length > 0, "the home page references no portfolio or shorts jpg");
   for (const path of paths) {
     assert.ok(existsSync(join(dist, path)), `dist/client${path} is missing`);
