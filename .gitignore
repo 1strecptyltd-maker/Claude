@@ -119,11 +119,9 @@ Thumbs.db
 /app/work/approved/
 # Client images still pending publication clearance.
 # Delete a line here only after that client's public-display approval is on file.
-/public/portfolio/bentley/
 /public/portfolio/chongguang-workshop/
 /public/portfolio/eimele/
 /public/portfolio/emp-dairy-lactoferrin/
-/public/portfolio/geely/
 /public/portfolio/hatman/
 /public/portfolio/malaymalay/
 /public/portfolio/mirror-and-moon/

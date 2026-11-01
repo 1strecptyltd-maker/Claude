@@ -48,3 +48,13 @@
 - Dr. LeWinn's：品牌直接委托，没有代理；First Rec. 负责制作与后期；周年影片用了一部分素材库素材，客户提供的素材基本没用。三支影片（含周年影片）都交付了带字幕和无字幕两个版本。
 - Spin Panda：Starlink 统一称为 "agency partner"（不用 "media partner" / "media intermediary"），包括页面上的标签。
 - 草稿里列出的其他问题（展会名称、日期、委托关系等）还没回答，新文案没有写这些内容。
+
+### 2026-11-01 首页改版：新阵容、全部公开、竖屏区
+
+- 创始人选定首页新设计（杂志巨字版式 + 9:16 竖屏轮播，原型见设计稿 dir-4）。第一轮范围：首页按新设计重做、全站换字体颜色和页头页脚、新案例先做简版案例页、作品页加竖屏 Short-form 区。作品页、案例页的重新排版放第二轮。
+- 公开：`geely-australia`、`bentley` 改为公开；新增案例 TikTok、SRW Laboratories、Dreame、Narwal、Inner Health，均公开。延续 2026-10-23「作品集、客户名单都可公开」的决定。`.gitignore` 里 Geely、Bentley 两个图片目录据此删除。
+- 委托关系：TikTok、SRW、Narwal、Coach 都经 agency 接单，案例页写 agency partner，不写直客。Dreame、Inner Health 的委托关系待确认，页面暂不写。
+- Hennessy：成片库里的 Hennessy 竖屏片是客户提供的混剪素材，不是 First Rec. 拍摄的。全站不使用这条片，也不写 Hennessy 现场。
+- 首页精选 8 个，顺序为：Geely、TikTok、SRW、Dr. LeWinn's、Dreame、Narwal、INDIBA、Inner Health。Spin Panda、Jo Loves、MM Karaoke、NVIDIA、Bentley 保持公开，但不进首页精选。
+- 首页竖屏区 6 支：Bentley、Coach、Bvlgari、Range Rover、TikTok Creators Party、Geely EE Show 2026。作品页再加 MG、Cartier、TikTok Creator Summit、Dangerously Modern，共 10 支。Dior 确认交付版之前不放。
+- 英文文案先用草稿，上线前由创始人统一修改。
