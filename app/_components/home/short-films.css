@@ -34,6 +34,7 @@
 }
 .film-player.open .film-player-box { transform: none; }
 .film-player video { height: min(80vh, 760px); width: auto; aspect-ratio: 9 / 16; background: #000; }
+.film-player--wide video { aspect-ratio: 16 / 9; width: min(88vw, 1280px); height: auto; }
 .film-player-cap { color: var(--paper); font-size: 16px; display: flex; gap: 14px; align-items: baseline; }
 .film-player-cap .n { font-family: var(--display); text-transform: uppercase; font-size: 22px; letter-spacing: -.02em; }
 .film-player-cap .t { color: var(--mute-d, #b9b3a8); }
@@ -46,5 +47,6 @@
 @media (max-width: 760px) {
   .reel-row .reel-cap .n { font-size: 19px; }
   .film-player video { height: auto; width: min(86vw, calc(78vh * 9 / 16)); }
+  .film-player--wide video { width: 92vw; height: auto; }
   .film-player-close { top: 12px; right: 12px; }
 }

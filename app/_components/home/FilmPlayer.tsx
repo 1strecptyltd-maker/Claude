@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { ShortFilm } from "../../_data/shorts";
 
-type PlayDetail = { film: ShortFilm; opener: HTMLElement };
+type PlayDetail = { film: ShortFilm; opener: HTMLElement; wide?: boolean };
 
 export function FilmPlayer() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -23,7 +23,7 @@ export function FilmPlayer() {
     box.prepend(video);
     let opener: HTMLElement | null = null;
 
-    const open = (film: ShortFilm, button: HTMLElement) => {
+    const open = (film: ShortFilm, button: HTMLElement, wide?: boolean) => {
       opener = button;
       const name = root.querySelector(".film-player-cap .n");
       const type = root.querySelector(".film-player-cap .t");
@@ -34,6 +34,7 @@ export function FilmPlayer() {
       video.poster = film.poster;
       video.src = film.full;
       root.classList.add("open");
+      root.classList.toggle("film-player--wide", Boolean(wide));
       document.body.style.overflow = "hidden";
       window.dispatchEvent(new CustomEvent("firstrec:player", { detail: { open: true } }));
       const play = video.play();
@@ -44,6 +45,7 @@ export function FilmPlayer() {
     const close = () => {
       if (!root.classList.contains("open")) return;
       root.classList.remove("open");
+      root.classList.remove("film-player--wide");
       document.body.style.overflow = "";
       video.pause();
       video.removeAttribute("src");
@@ -54,7 +56,7 @@ export function FilmPlayer() {
 
     const onPlay = (event: Event) => {
       const detail = (event as CustomEvent<PlayDetail>).detail;
-      if (detail && detail.film) open(detail.film, detail.opener);
+      if (detail && detail.film) open(detail.film, detail.opener, detail.wide);
     };
     const onBackdropClick = (event: MouseEvent) => { if (event.target === root) close(); };
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };

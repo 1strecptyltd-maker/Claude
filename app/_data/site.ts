@@ -1,5 +1,10 @@
 import type { CaseFilm, CaseStudyBlock } from "../_components/CaseStudyBlocks";
 
+export type WorkFormat = "film" | "vertical" | "interviews" | "photography";
+
+/** A 16:9 film shown on the work page. `preview` is a six-second muted loop (not in Git, like every mp4; see scripts/sync-media.sh). */
+export type WorkFilm = { title: string; src: string; poster: string; preview: string; duration: string };
+
 export type CaseStudy = {
   slug: string;
   client: string;
@@ -18,6 +23,20 @@ export type CaseStudy = {
     inset?: { src: string; alt: string; position?: string };
     /** A figure set large beside the case, e.g. an anniversary. */
     number?: string;
+  };
+  /** Work page delivery set (founder selection 2026-11-02). name / what / deliverables fall back to `home`, then to client / category / scope. */
+  work?: {
+    name?: string;
+    what?: string;
+    deliverables?: string;
+    formats: WorkFormat[];
+    /** Shown as a full delivery set; the rest of the listed cases become cards. */
+    featured: boolean;
+    film?: WorkFilm;
+    interviews?: WorkFilm[];
+    /** Slugs from app/_data/shorts.ts. */
+    verticals?: string[];
+    photos: Array<{ src: string; alt: string }>;
   };
   scope: string;
   summary: string;
@@ -87,6 +106,25 @@ export const caseStudies: CaseStudy[] = [
       src: "/portfolio/geely/ee-show-film.mp4",
       poster: "/portfolio/geely/ee-show-film-poster.jpg",
       title: "Geely at Everything Electric Sydney 2026",
+    },
+    work: {
+      formats: ["film", "vertical", "interviews", "photography"],
+      featured: true,
+      film: {
+        title: "Geely at Everything Electric Sydney 2026",
+        src: "/portfolio/geely/ee-show-film.mp4",
+        poster: "/portfolio/geely/ee-show-film-poster.jpg",
+        preview: "/portfolio/geely/preview.mp4",
+        duration: "1:00",
+      },
+      verticals: ["geely-ee-show-2026"],
+      photos: [
+        { src: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show" },
+        { src: "/portfolio/geely/show-stand.jpg", alt: "Visitors inside a Geely on the show stand" },
+        { src: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor" },
+        { src: "/portfolio/geely/arrival.jpg", alt: "A family walking towards a Geely SUV outside a contemporary home" },
+        { src: "/portfolio/geely/family.jpg", alt: "A parent and child sitting in the open rear of a Geely vehicle with flowers and blankets" },
+      ],
     },
     home: {
       name: "Geely",
@@ -199,6 +237,24 @@ export const caseStudies: CaseStudy[] = [
       src: "/portfolio/bentley/kiama-film.mp4",
       poster: "/portfolio/bentley/kiama-film-poster.jpg",
       title: "Bentley creator film, Kiama",
+    },
+    work: {
+      what: "Creator content, Kiama",
+      deliverables: "Creator film and photography.",
+      formats: ["film", "vertical", "photography"],
+      featured: false,
+      film: {
+        title: "Bentley creator film, Kiama",
+        src: "/portfolio/bentley/kiama-film.mp4",
+        poster: "/portfolio/bentley/kiama-film-poster.jpg",
+        preview: "/portfolio/bentley/preview.mp4",
+        duration: "1:21",
+      },
+      verticals: ["bentley"],
+      photos: [
+        { src: "/portfolio/bentley/hero.jpg", alt: "A woman driving a red Bentley through a sunlit landscape, framed through the side window" },
+        { src: "/portfolio/bentley/driver.jpg", alt: "A driver seen through the open roof of a red Bentley with a wide landscape beyond" },
+      ],
     },
   },
   {
@@ -505,6 +561,23 @@ export const caseStudies: CaseStudy[] = [
       },
       { type: "next", slug: "dr-lewinn" },
     ],
+    work: {
+      what: "Opening event, Central Park",
+      deliverables: "Opening event film and seven photographs.",
+      formats: ["film", "photography"],
+      featured: false,
+      film: {
+        title: "Spin Panda film",
+        src: "/portfolio/spin-panda/film.mp4",
+        poster: "/portfolio/spin-panda/film-poster.jpg",
+        preview: "/portfolio/spin-panda/preview.mp4",
+        duration: "1:32",
+      },
+      photos: [
+        { src: "/portfolio/spin-panda/hero.jpg", alt: "The Spin Panda storefront framed by green balloons, flower stands and customers" },
+        { src: "/portfolio/spin-panda/dining-crowd.jpg", alt: "Customers selecting food and dining inside Spin Panda" },
+      ],
+    },
   },
   {
     slug: "spring-bistro",
@@ -933,6 +1006,34 @@ export const caseStudies: CaseStudy[] = [
         title: "Jade Peak interview film",
       },
     ],
+    work: {
+      formats: ["film", "interviews"],
+      featured: true,
+      film: {
+        title: "Dr. LeWinn's 35th anniversary film",
+        src: "/portfolio/dr-lewinn/anniversary-film.mp4",
+        poster: "/portfolio/dr-lewinn/lead.jpg",
+        preview: "/portfolio/dr-lewinn/preview.mp4",
+        duration: "1:10",
+      },
+      interviews: [
+        {
+          title: "Brett Charlton interview film",
+          src: "/portfolio/dr-lewinn/ceo-interview.mp4",
+          poster: "/portfolio/dr-lewinn/ceo-poster.jpg",
+          preview: "",
+          duration: "1:15",
+        },
+        {
+          title: "Jade Peak interview film",
+          src: "/portfolio/dr-lewinn/jade-interview.mp4",
+          poster: "/portfolio/dr-lewinn/jade-poster.jpg",
+          preview: "",
+          duration: "1:31",
+        },
+      ],
+      photos: [],
+    },
     home: {
       what: "35th anniversary",
       deliverables: "Anniversary film and two interviews, each in subtitled and subtitle-free versions.",
@@ -992,6 +1093,24 @@ export const caseStudies: CaseStudy[] = [
       poster: "/portfolio/indiba-icc/film-poster.jpg",
       title: "INDIBA exhibition film",
     },
+    work: {
+      formats: ["film", "vertical", "photography"],
+      featured: true,
+      film: {
+        title: "INDIBA exhibition film",
+        src: "/portfolio/indiba-icc/film.mp4",
+        poster: "/portfolio/indiba-icc/film-poster.jpg",
+        preview: "/portfolio/indiba-icc/preview.mp4",
+        duration: "1:41",
+      },
+      photos: [
+        { src: "/portfolio/indiba-icc/booth.jpg", alt: "A wide view of the INDIBA exhibition stand, treatment beds and surrounding show floor" },
+        { src: "/portfolio/indiba-icc/demonstration.jpg", alt: "Visitors gathered around an INDIBA product demonstration on the exhibition floor" },
+        { src: "/portfolio/indiba-icc/device.jpg", alt: "A close view of an INDIBA device displayed against the red exhibition stand" },
+        { src: "/portfolio/indiba-icc/team.jpg", alt: "A group portrait of the event team in front of the INDIBA exhibition stand" },
+        { src: "/portfolio/indiba-icc/activation-wall.jpg", alt: "Visitors adding a message to a reflective INDIBA Australia activation wall" },
+      ],
+    },
     home: {
       what: "Beauty Expo Australia stand",
       deliverables: "Exhibition film, photography, vertical vox-pops.",
@@ -1040,6 +1159,23 @@ export const caseStudies: CaseStudy[] = [
       poster: "/portfolio/jo-loves/film-poster.jpg",
       title: "Jo Loves retail event film",
     },
+    work: {
+      what: "Retail activation",
+      deliverables: "Retail activation film and photography.",
+      formats: ["film", "photography"],
+      featured: false,
+      film: {
+        title: "Jo Loves retail event film",
+        src: "/portfolio/jo-loves/film.mp4",
+        poster: "/portfolio/jo-loves/film-poster.jpg",
+        preview: "/portfolio/jo-loves/preview.mp4",
+        duration: "0:58",
+      },
+      photos: [
+        { src: "/portfolio/jo-loves/hero.jpg", alt: "The Jo Loves retail installation with staff positioned across the entrance" },
+        { src: "/portfolio/jo-loves/crowd.jpg", alt: "Visitors gathered around the Jo Loves retail installation" },
+      ],
+    },
   },
   {
     slug: "mm-karaoke",
@@ -1083,6 +1219,16 @@ export const caseStudies: CaseStudy[] = [
         ratio: "4 / 3",
       },
     ],
+    work: {
+      what: "Karaoke dining",
+      deliverables: "Food and hospitality photography.",
+      formats: ["photography"],
+      featured: false,
+      photos: [
+        { src: "/portfolio/mm-karaoke/hero.jpg", alt: "A colourful spread of food, fruit and bottles on a karaoke table" },
+        { src: "/portfolio/mm-karaoke/toast.jpg", alt: "Two people toasting over a table filled with food in a karaoke room" },
+      ],
+    },
   },
   {
     slug: "nvidia",
@@ -1126,6 +1272,16 @@ export const caseStudies: CaseStudy[] = [
         ratio: "3 / 2",
       },
     ],
+    work: {
+      what: "NVIDIA AI Day Sydney",
+      deliverables: "Technology event photography.",
+      formats: ["photography"],
+      featured: false,
+      photos: [
+        { src: "/portfolio/nvidia/hero.jpg", alt: "NVIDIA AI Day Sydney stage with a speaker, presentation screen and NVIDIA-branded lectern" },
+        { src: "/portfolio/nvidia/auditorium.jpg", alt: "A speaker presenting to a full auditorium during NVIDIA AI Day Sydney" },
+      ],
+    },
   },
   {
     slug: "tiktok",
@@ -1147,6 +1303,19 @@ export const caseStudies: CaseStudy[] = [
       { image: "/portfolio/tiktok/creators-party.jpg", alt: "Creators celebrating at the TikTok LIVE Creators Party", ratio: "9 / 16" },
     ],
     film: { src: "/portfolio/tiktok/film.mp4", poster: "/portfolio/tiktok/film-poster.jpg", title: "TikTok LIVE Creator Summit highlight film" },
+    work: {
+      formats: ["film", "vertical"],
+      featured: true,
+      film: {
+        title: "TikTok LIVE Creator Summit highlight film",
+        src: "/portfolio/tiktok/film.mp4",
+        poster: "/portfolio/tiktok/film-poster.jpg",
+        preview: "/portfolio/tiktok/preview.mp4",
+        duration: "0:54",
+      },
+      verticals: ["tiktok-creators-party", "tiktok-creator-summit"],
+      photos: [],
+    },
     home: {
       what: "TikTok LIVE Creator Summit + Creators Party, Sydney",
       deliverables: "Highlight films in 16:9 and 9:16.",
@@ -1174,6 +1343,21 @@ export const caseStudies: CaseStudy[] = [
       { image: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch", ratio: "16 / 9" },
     ],
     film: { src: "/portfolio/srw/film.mp4", poster: "/portfolio/srw/film-poster.jpg", title: "SRW Laboratories launch film" },
+    work: {
+      formats: ["film", "photography"],
+      featured: true,
+      film: {
+        title: "SRW Laboratories launch film",
+        src: "/portfolio/srw/film.mp4",
+        poster: "/portfolio/srw/hero.jpg",
+        preview: "/portfolio/srw/preview.mp4",
+        duration: "0:45",
+      },
+      photos: [
+        { src: "/portfolio/srw/hero.jpg", alt: "Group photo by the pool at Bondi Icebergs for the SRW launch" },
+        { src: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch" },
+      ],
+    },
     home: {
       name: "SRW",
       what: "Brand launch, Bondi Icebergs",
@@ -1201,6 +1385,18 @@ export const caseStudies: CaseStudy[] = [
       { image: "/portfolio/dreame/keynote.jpg", alt: "A speaker on stage at the Dreame brand event", ratio: "16 / 9" },
     ],
     film: { src: "/portfolio/dreame/film.mp4", poster: "/portfolio/dreame/showroom.jpg", title: "Dreame brand event recap film" },
+    work: {
+      formats: ["film"],
+      featured: true,
+      film: {
+        title: "Dreame brand event recap film",
+        src: "/portfolio/dreame/film.mp4",
+        poster: "/portfolio/dreame/hero.jpg",
+        preview: "/portfolio/dreame/preview.mp4",
+        duration: "1:15",
+      },
+      photos: [],
+    },
     home: {
       what: "Brand event",
       deliverables: "Event recap film.",
@@ -1227,6 +1423,18 @@ export const caseStudies: CaseStudy[] = [
       { image: "/portfolio/narwal/guests.jpg", alt: "Guests watching a presentation at the Narwal launch", ratio: "16 / 9" },
     ],
     film: { src: "/portfolio/narwal/film.mp4", poster: "/portfolio/narwal/film-poster.jpg", title: "Narwal FLOW launch highlight film" },
+    work: {
+      formats: ["film"],
+      featured: true,
+      film: {
+        title: "Narwal FLOW launch highlight film",
+        src: "/portfolio/narwal/film.mp4",
+        poster: "/portfolio/narwal/film-poster.jpg",
+        preview: "/portfolio/narwal/preview.mp4",
+        duration: "1:43",
+      },
+      photos: [],
+    },
     home: {
       what: "FLOW launch on Sydney Harbour",
       deliverables: "Launch film and highlight cut.",
@@ -1253,6 +1461,18 @@ export const caseStudies: CaseStudy[] = [
       { image: "/portfolio/inner-health/products.jpg", alt: "Inner Health probiotic products", ratio: "16 / 9" },
     ],
     film: { src: "/portfolio/inner-health/film.mp4", poster: "/portfolio/inner-health/film-poster.jpg", title: "Inner Health 59-second film" },
+    work: {
+      formats: ["film", "vertical"],
+      featured: true,
+      film: {
+        title: "Inner Health 59-second film",
+        src: "/portfolio/inner-health/film.mp4",
+        poster: "/portfolio/inner-health/film-poster.jpg",
+        preview: "/portfolio/inner-health/preview.mp4",
+        duration: "0:58",
+      },
+      photos: [],
+    },
     home: {
       what: "Corporate film",
       deliverables: "4-minute film, 59-second cuts in 16:9 and 9:16, Mandarin-subtitled version.",
