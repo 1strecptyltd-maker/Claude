@@ -164,7 +164,7 @@ export function WorkSets({ sets, cards, counts, films, foodLink }: WorkSetsProps
   return (
     <div className="work-room" ref={rootRef}>
       <header className="work-room-hero">
-        <h1><span className="work-room-line">What one shoot</span> <span className="work-room-line">turns into.</span></h1>
+        <h1><span className="work-room-line"><span>What one shoot</span></span> <span className="work-room-line"><span>turns into.</span></span></h1>
         <p>Each production below is laid out as the client received it: the film, the vertical cuts, the interviews and the photographs. Choose a format to see who it was made for.</p>
         <div className="work-key" role="group" aria-label="Filter by format">
           <button type="button" data-format="" aria-pressed="true">Everything <em>{counts.all}</em></button>
@@ -187,28 +187,30 @@ export function WorkSets({ sets, cards, counts, films, foodLink }: WorkSetsProps
                 <span className="work-set-play">Play film <span>{item.film.duration}</span></span>
               </button>
             ) : null}
-            {item.verticals.length > 0 ? (
-              <div className="work-set-verticals">
-                {item.verticals.map((slug) => {
-                  const short = films.find((film) => film.slug === slug);
-                  if (!short) return null;
-                  return (
-                    <button className="work-set-vertical" type="button" key={slug} data-slug={short.slug} data-preview={short.preview} aria-label={`Play ${short.brand}, ${short.type.toLowerCase()}, ${short.duration}`}>
-                      <span className="work-set-media"><Image src={short.poster} alt="" fill sizes="(max-width: 1000px) 42vw, 14vw" /></span>
-                      <span className="work-set-tag">9:16</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-            <dl className="work-set-slip">
-              {slipEntries(item).map((entry) => (
-                <div key={entry.dt}>
-                  <dt>{entry.dt}</dt>
-                  <dd>{entry.dd}</dd>
+            <div className="work-set-aside">
+              {item.verticals.length > 0 ? (
+                <div className="work-set-verticals">
+                  {item.verticals.map((slug) => {
+                    const short = films.find((film) => film.slug === slug);
+                    if (!short) return null;
+                    return (
+                      <button className="work-set-vertical" type="button" key={slug} data-slug={short.slug} data-preview={short.preview} aria-label={`Play ${short.brand}, ${short.type.toLowerCase()}, ${short.duration}`}>
+                        <span className="work-set-media"><Image src={short.poster} alt="" fill sizes="(max-width: 1000px) 42vw, 14vw" /></span>
+                        <span className="work-set-tag">9:16</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </dl>
+              ) : null}
+              <dl className="work-set-slip">
+                {slipEntries(item).map((entry) => (
+                  <div key={entry.dt}>
+                    <dt>{entry.dt}</dt>
+                    <dd>{entry.dd}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
             {item.interviews.length > 0 ? (
               <div className="work-set-interviews">
                 {item.interviews.map((interview) => (
