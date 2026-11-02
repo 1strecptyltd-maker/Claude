@@ -12,7 +12,7 @@ const assertReviewNotice = (html, note) => (includeInternal ? assert.match : ass
 
 const pages = [
   ["index.html", /One shoot\./],
-  ["work/index.html", /Built for the moment/],
+  ["work/index.html", /What one shoot/],
   ["work/food-hospitality/index.html", /Made to be/],
   ["work/spin-panda/index.html", /Spin Panda/],
   ["work/dr-lewinn/index.html", /Dr\. LeWinn/],
@@ -126,7 +126,6 @@ test("renders reviewed internal media without presenting Molly Tea placeholders 
   assert.match(mirrorAndMoon, /striped-dress\.jpg/);
   for (const name of ["Molly Tea", "Bentley", "Eimele", "Chongguang Workshop", "Hatman", "MalayMalay"]) assert.match(work, new RegExp(name));
   assert.match(work, /Mirror &amp; Moon|Mirror & Moon/);
-  assert.match(work, /Food \+ menu/);
   assert.match(work, /Publication clearance is pending/);
 });
 
@@ -144,7 +143,7 @@ test("public work index lists only cleared cases and drops empty categories", { 
   assert.match(work, /href="\/work\/spin-panda\/"/);
 });
 
-test("renders Spin Panda's authorised media and the shared work categories", async () => {
+test("renders Spin Panda's authorised media and its work index card", async () => {
   const [spinPanda, work] = await Promise.all([read("work/spin-panda/index.html"), read("work/index.html")]);
 
   assert.match(spinPanda, /portfolio\/spin-panda\/hero\.jpg/);
@@ -154,8 +153,6 @@ test("renders Spin Panda's authorised media and the shared work categories", asy
   assertReviewNotice(spinPanda, /Public display authorised/);
   assert.match(spinPanda, /Central Park opening event/);
   assert.match(work, /Spin Panda/);
-  assert.match(work, /Film \+ production/);
-  assert.match(work, /id="photography"/);
   assert.match(work, /href="\/work\/food-hospitality\/"/);
 });
 
