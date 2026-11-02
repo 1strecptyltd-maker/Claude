@@ -1,3 +1,10 @@
+import type { CaseFilm, CaseStudyBlock } from "../_components/CaseStudyBlocks";
+
+export type WorkFormat = "film" | "vertical" | "interviews" | "photography";
+
+/** A 16:9 film shown on the work page. `preview` is a six-second muted loop (not in Git, like every mp4; see scripts/sync-media.sh). */
+export type WorkFilm = { title: string; src: string; poster: string; preview: string; duration: string };
+
 export type CaseStudy = {
   slug: string;
   client: string;
@@ -5,6 +12,32 @@ export type CaseStudy = {
   discipline: "Film + production" | "Photography" | "Food + menu" | "Food + hospitality";
   image: string;
   alt: string;
+  /** Optional image for the home page hero; falls back to `image` / `alt`. */
+  homeImage?: { src: string; alt: string; position?: string };
+  /** Home page card (founder selection 2026-11-01): short name, the line under it, deliverables and its photos. */
+  home?: {
+    name?: string;
+    what: string;
+    deliverables: string;
+    image: { src: string; alt: string; position?: string };
+    inset?: { src: string; alt: string; position?: string };
+    /** A figure set large beside the case, e.g. an anniversary. */
+    number?: string;
+  };
+  /** Work page delivery set (founder selection 2026-11-02). name / what / deliverables fall back to `home`, then to client / category / scope. */
+  work?: {
+    name?: string;
+    what?: string;
+    deliverables?: string;
+    formats: WorkFormat[];
+    /** Shown as a full delivery set; the rest of the listed cases become cards. */
+    featured: boolean;
+    film?: WorkFilm;
+    interviews?: WorkFilm[];
+    /** Slugs from app/_data/shorts.ts. */
+    verticals?: string[];
+    photos: Array<{ src: string; alt: string }>;
+  };
   scope: string;
   summary: string;
   challenge: string;
@@ -20,39 +53,34 @@ export type CaseStudy = {
     alt: string;
     ratio?: string;
   }>;
-  film?: {
-    src: string;
-    poster: string;
-    title: string;
-    type?: string;
-  };
-  films?: Array<{
-    src: string;
-    poster: string;
-    title: string;
-    type?: string;
-  }>;
+  film?: CaseFilm;
+  films?: CaseFilm[];
+  /** Optional modular layout. When present, CaseStudyPage renders these blocks instead of the fixed template. */
+  blocks?: CaseStudyBlock[];
 };
 
-export const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@cheese.studio";
+export const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "info@firstrec.com.au";
 
 export const caseStudies: CaseStudy[] = [
   {
     slug: "geely-australia",
     client: "Geely Australia",
-    category: "Long-term visual production",
+    category: "Motor shows & launches",
     discipline: "Film + production",
     image: "/portfolio/geely/hero.jpg",
     alt: "A silver Geely SUV photographed above Sydney Harbour at dusk",
     scope: "Production coordination, photography, cinematography and post-production.",
-    summary: "A responsive production partner across launches, live events, social content and TikTok Live anniversary coverage.",
+    summary: "A responsive production partner across motor shows, launches, live events, social content and TikTok Live anniversary coverage.",
     challenge: "A long-term brand relationship needs consistency without becoming rigid. Each launch, event and social brief brings a different schedule, scale and production need.",
     response: "First Rec. works directly with Geely Australia, changing roles around the brief. Large events centre on production coordination and photography, while ongoing content can include cinematography and post-production.",
-    outcome: "The reviewed archive spans launch coverage, exhibition storytelling, interviews, social formats and location photography across a long-term production relationship.",
+    outcome: "Coverage across four motor shows and a run of launches: films in 16:9 and 9:16, subtitled interviews and more than 600 photographs.",
     channels: "Launches / Large events / Social / TikTok Live",
     role: "Coordination / Photography / Cinematography / Post",
-    mediaNotice: "Internal review assets / Publication clearance pending",
+    mediaNotice: "Public display authorised / Direct client project",
     gallery: [
+      { image: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show", ratio: "3 / 2" },
+      { image: "/portfolio/geely/show-stand.jpg", alt: "Visitors inside a Geely on the show stand", ratio: "3 / 2" },
+      { image: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor", ratio: "3 / 2" },
       {
         image: "/portfolio/geely/coastal-drive.jpg",
         alt: "A Geely vehicle driving across a curved coastal bridge",
@@ -75,9 +103,35 @@ export const caseStudies: CaseStudy[] = [
       },
     ],
     film: {
-      src: "/portfolio/geely/launch-film.m4v",
-      poster: "/portfolio/geely/hero.jpg",
-      title: "Geely Australia launch film",
+      src: "/portfolio/geely/ee-show-film.mp4",
+      poster: "/portfolio/geely/ee-show-film-poster.jpg",
+      title: "Geely at Everything Electric Sydney 2026",
+    },
+    work: {
+      formats: ["film", "vertical", "interviews", "photography"],
+      featured: true,
+      film: {
+        title: "Geely at Everything Electric Sydney 2026",
+        src: "/portfolio/geely/ee-show-film.mp4",
+        poster: "/portfolio/geely/ee-show-film-poster.jpg",
+        preview: "/portfolio/geely/preview.mp4",
+        duration: "1:00",
+      },
+      verticals: ["geely-ee-show-2026"],
+      photos: [
+        { src: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show" },
+        { src: "/portfolio/geely/show-stand.jpg", alt: "Visitors inside a Geely on the show stand" },
+        { src: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor" },
+        { src: "/portfolio/geely/arrival.jpg", alt: "A family walking towards a Geely SUV outside a contemporary home" },
+        { src: "/portfolio/geely/family.jpg", alt: "A parent and child sitting in the open rear of a Geely vehicle with flowers and blankets" },
+      ],
+    },
+    home: {
+      name: "Geely",
+      what: "Motor shows & launches, Sydney + Melbourne",
+      deliverables: "Four shows. Films in 16:9 and 9:16, subtitled interviews, 600+ photographs.",
+      image: { src: "/portfolio/geely/show-floor.jpg", alt: "Crowds around the Geely stand at a motor show", position: "60% 50%" },
+      inset: { src: "/portfolio/geely/starray.jpg", alt: "A Geely Starray EM-i on the show floor" },
     },
   },
   {
@@ -96,10 +150,12 @@ export const caseStudies: CaseStudy[] = [
     role: "Cinematography / Post-production",
     mediaNotice: "Internal review assets / Project details and publication clearance pending",
     film: {
-      src: "/portfolio/molly-tea/opening-film.mov",
+      src: "/portfolio/molly-tea/opening-film.mp4",
       poster: "/portfolio/molly-tea/hero.jpg",
       title: "Molly Tea opening film",
-      type: "video/quicktime",
+      type: "video/mp4",
+      // Transcoded H.264/AAC cut for Chromium/Firefox; the original QuickTime file stays as a Safari fallback (HANDOFF §6c).
+      fallbacks: [{ src: "/portfolio/molly-tea/opening-film.mov", type: "video/quicktime" }],
     },
   },
   {
@@ -143,18 +199,18 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: "bentley",
     client: "Bentley",
-    category: "Automotive image study",
-    discipline: "Photography",
+    category: "Creator content / Automotive",
+    discipline: "Film + production",
     image: "/portfolio/bentley/hero.jpg",
     alt: "A woman driving a red Bentley through a sunlit landscape, framed through the side window",
-    scope: "Photography selection and web presentation.",
-    summary: "A compact automotive stills selection built from the supplied work archive.",
-    challenge: "The supplied folder contains seven frames across hero, driving, interior and portrait compositions, with project details still to be confirmed.",
-    response: "The draft keeps one wide hero and four complementary images so the existing case-study layout can hold both landscape and portrait views without repeating the same frame.",
-    outcome: "A review-ready visual set for discussion. Project date, location, credits, role and publication permission remain to be confirmed.",
-    channels: "Automotive / Brand imagery",
-    role: "Photography / Public credits to confirm",
-    mediaNotice: "Internal review assets / Project details and publication clearance pending",
+    scope: "Creator film and photography.",
+    summary: "A creator film and stills for Bentley, shot on the coast at Kiama.",
+    challenge: "A creator collaboration for Bentley that needed a short film and a set of stills from one day on location.",
+    response: "First Rec. filmed and photographed the drive and the stops along the way, then cut the film in 16:9 and 9:16.",
+    outcome: "An 81-second film in 16:9 and 9:16 and a set of stills.",
+    channels: "Automotive / Creator content / Film / Photography",
+    role: "Filming / Photography / Editing",
+    mediaNotice: "Public display authorised / Creator collaboration",
     gallery: [
       {
         image: "/portfolio/bentley/sunset-hero.jpg",
@@ -177,6 +233,29 @@ export const caseStudies: CaseStudy[] = [
         ratio: "3 / 4",
       },
     ],
+    film: {
+      src: "/portfolio/bentley/kiama-film.mp4",
+      poster: "/portfolio/bentley/kiama-film-poster.jpg",
+      title: "Bentley creator film, Kiama",
+    },
+    work: {
+      what: "Creator content, Kiama",
+      deliverables: "Creator film and photography.",
+      formats: ["film", "vertical", "photography"],
+      featured: false,
+      film: {
+        title: "Bentley creator film, Kiama",
+        src: "/portfolio/bentley/kiama-film.mp4",
+        poster: "/portfolio/bentley/kiama-film-poster.jpg",
+        preview: "/portfolio/bentley/preview.mp4",
+        duration: "1:21",
+      },
+      verticals: ["bentley"],
+      photos: [
+        { src: "/portfolio/bentley/hero.jpg", alt: "A woman driving a red Bentley through a sunlit landscape, framed through the side window" },
+        { src: "/portfolio/bentley/driver.jpg", alt: "A driver seen through the open roof of a red Bentley with a wide landscape beyond" },
+      ],
+    },
   },
   {
     slug: "eimele",
@@ -391,10 +470,10 @@ export const caseStudies: CaseStudy[] = [
     image: "/portfolio/spin-panda/hero.jpg",
     alt: "The Spin Panda storefront framed by green balloons, flower stands and customers",
     scope: "Opening event film and photography production.",
-    summary: "Opening event coverage produced for Spin Panda's Central Park store through media partner Starlink.",
+    summary: "Opening event coverage produced for Spin Panda's Central Park store through agency partner Starlink.",
     challenge: "The Central Park opening event moved between the storefront, surrounding precinct, busy self-service interior, food details and guests within one live service environment.",
-    response: "First Rec. produced the coverage through media intermediary Starlink, delivering one horizontal event film and a seven-image photography selection that moves from the public arrival to the in-store experience.",
-    outcome: "A publicly authorised film and photography archive of the 22 August 2026 opening event, bringing together the store, self-service format, food presentation and guest atmosphere.",
+    response: "First Rec. produced the coverage through agency partner Starlink, delivering one horizontal event film and seven photographs that move from the public arrival to the in-store experience.",
+    outcome: "A film and photography record of the 22 August 2026 opening, bringing together the store, its self-service format, the food and the guest atmosphere.",
     channels: "Opening event / Film / Photography",
     role: "Production / Film / Photography",
     mediaPartner: "Starlink",
@@ -434,8 +513,70 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/spin-panda/film.mp4",
-      poster: "/portfolio/spin-panda/hero.jpg",
+      poster: "/portfolio/spin-panda/film-poster.jpg",
       title: "Spin Panda film",
+    },
+
+    blocks: [
+      { type: "hero" },
+      { type: "fullImage" },
+      {
+        type: "facts",
+        items: [
+          { label: "Channels", value: "Opening event / Film / Photography" },
+          { label: "First Rec. role", value: "Production / Film / Photography" },
+          { label: "Agency partner", value: "Starlink" },
+          { label: "Date", value: "22 August 2026" },
+          { label: "Results" },
+        ],
+      },
+      {
+        type: "intro",
+        label: "01 / Context",
+        text: "The Central Park opening event moved between the storefront, surrounding precinct, busy self-service interior, food details and guests within one live service environment.",
+      },
+      {
+        type: "twoColumn",
+        columns: [
+          {
+            label: "02 / Response",
+            text: "First Rec. produced the coverage through agency partner Starlink, delivering one horizontal event film and seven photographs that move from the public arrival to the in-store experience.",
+          },
+          {
+            label: "03 / Value",
+            text: "A film and photography record of the 22 August 2026 opening, bringing together the store, its self-service format, the food and the guest atmosphere.",
+          },
+        ],
+      },
+      { type: "video" },
+      { type: "deliverables", items: ["One horizontal event film", "Seven-image photography selection"] },
+      { type: "gallery" },
+      {
+        type: "credits",
+        items: [
+          { role: "Client", name: "Spin Panda" },
+          { role: "Production / Film / Photography", name: "First Rec." },
+          { role: "Agency partner", name: "Starlink" },
+        ],
+      },
+      { type: "next", slug: "dr-lewinn" },
+    ],
+    work: {
+      what: "Opening event, Central Park",
+      deliverables: "Opening event film and seven photographs.",
+      formats: ["film", "photography"],
+      featured: false,
+      film: {
+        title: "Spin Panda film",
+        src: "/portfolio/spin-panda/film.mp4",
+        poster: "/portfolio/spin-panda/film-poster.jpg",
+        preview: "/portfolio/spin-panda/preview.mp4",
+        duration: "1:32",
+      },
+      photos: [
+        { src: "/portfolio/spin-panda/hero.jpg", alt: "The Spin Panda storefront framed by green balloons, flower stands and customers" },
+        { src: "/portfolio/spin-panda/dining-crowd.jpg", alt: "Customers selecting food and dining inside Spin Panda" },
+      ],
     },
   },
   {
@@ -838,13 +979,13 @@ export const caseStudies: CaseStudy[] = [
     client: "Dr. LeWinn's",
     category: "Corporate interviews / Anniversary film",
     discipline: "Film + production",
-    image: "/portfolio/dr-lewinn/hero.jpg",
-    alt: "Brett Charlton in a Dr. LeWinn's branded interview cover with skincare products",
+    image: "/portfolio/dr-lewinn/lead.jpg",
+    alt: "The heritage archive room from Dr. LeWinn's 35th anniversary film",
     scope: "Corporate interview and anniversary film production.",
     summary: "A direct-client film series bringing together executive interviews, product storytelling and a 35th anniversary brand story.",
-    challenge: "The final archive spans two bilingual interview edits and a separate anniversary film, moving between on-camera speakers, product demonstrations, retail context and laboratory imagery.",
-    response: "First Rec. produced three distinct films: an executive interview, a sales and ecommerce interview, and a 35th anniversary piece. This selection preserves the subtitled delivery versions and keeps the finished films at the centre of the case study.",
-    outcome: "The completed set presents the brand through leadership, product range, laboratory context and an anniversary message, with no-subtitle delivery variants retained in the source archive.",
+    challenge: "The project spanned two bilingual interviews and a separate anniversary film, moving between on-camera speakers, product demonstrations, retail context and laboratory imagery.",
+    response: "First Rec. produced three distinct films: an executive interview, a sales and ecommerce interview, and a 35th anniversary piece. Working directly with the brand, the studio covered both production and post-production.",
+    outcome: "The completed set presents the brand through leadership, product range, laboratory context and an anniversary message, with each film delivered in subtitled and subtitle-free versions.",
     channels: "Brand / Corporate interview / Anniversary",
     role: "Film production / Post-production",
     mediaNotice: "Public display authorised / Direct client project",
@@ -856,7 +997,7 @@ export const caseStudies: CaseStudy[] = [
       },
       {
         src: "/portfolio/dr-lewinn/ceo-interview.mp4",
-        poster: "/portfolio/dr-lewinn/hero.jpg",
+        poster: "/portfolio/dr-lewinn/ceo-poster.jpg",
         title: "Brett Charlton interview film",
       },
       {
@@ -865,6 +1006,40 @@ export const caseStudies: CaseStudy[] = [
         title: "Jade Peak interview film",
       },
     ],
+    work: {
+      formats: ["film", "interviews"],
+      featured: true,
+      film: {
+        title: "Dr. LeWinn's 35th anniversary film",
+        src: "/portfolio/dr-lewinn/anniversary-film.mp4",
+        poster: "/portfolio/dr-lewinn/lead.jpg",
+        preview: "/portfolio/dr-lewinn/preview.mp4",
+        duration: "1:10",
+      },
+      interviews: [
+        {
+          title: "Brett Charlton interview film",
+          src: "/portfolio/dr-lewinn/ceo-interview.mp4",
+          poster: "/portfolio/dr-lewinn/ceo-poster.jpg",
+          preview: "",
+          duration: "1:15",
+        },
+        {
+          title: "Jade Peak interview film",
+          src: "/portfolio/dr-lewinn/jade-interview.mp4",
+          poster: "/portfolio/dr-lewinn/jade-poster.jpg",
+          preview: "",
+          duration: "1:31",
+        },
+      ],
+      photos: [],
+    },
+    home: {
+      what: "35th anniversary",
+      deliverables: "Anniversary film and two interviews, each in subtitled and subtitle-free versions.",
+      image: { src: "/portfolio/dr-lewinn/lead.jpg", alt: "The heritage archive room from Dr. LeWinn's 35th anniversary film" },
+      number: "35",
+    },
   },
   {
     slug: "indiba-icc",
@@ -873,11 +1048,16 @@ export const caseStudies: CaseStudy[] = [
     discipline: "Film + production",
     image: "/portfolio/indiba-icc/hero.jpg",
     alt: "An INDIBA treatment demonstration taking place in front of a red exhibition backdrop",
-    scope: "Photography and film selection from the supplied event archive.",
+    homeImage: {
+      src: "/portfolio/indiba-icc/home-hero.jpg",
+      alt: "An INDIBA therapist giving a facial treatment on the stand at Beauty Expo Australia",
+      position: "50% 12%",
+    },
+    scope: "Exhibition film and photography.",
     summary: "An exhibition-floor story built around treatment demonstrations, technology, team presence and visitor interaction.",
-    challenge: "The supplied ICC archive contains 187 photographs and four films covering a branded exhibition stand, live demonstrations, devices, team portraits and visitor engagement.",
-    response: "The selection leads with a live demonstration, then moves through the stand, conversations, device detail, team and activation wall. The English horizontal film adds a wider sense of flow across the event floor.",
-    outcome: "A public-display-authorised edit of the supplied event archive, kept deliberately focused while event date, venue naming and public credits remain unconfirmed.",
+    challenge: "INDIBA's red exhibition stand hosted live treatment demonstrations alongside its device displays, with visitors stopping to watch and talk.",
+    response: "First Rec. photographed and filmed INDIBA at work, from demonstrations in progress and close device detail to team portraits and visitors leaving messages on a reflective activation wall. The event film follows the movement across the show floor.",
+    outcome: "Film and photography that show INDIBA's technology in use, not just on display, with the event team and visitors in the picture.",
     channels: "Exhibition / Event / Film / Photography",
     role: "Photography / Film / Public credits to confirm",
     mediaNotice: "Public display authorised / Project details and credits to confirm",
@@ -910,8 +1090,31 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/indiba-icc/film.mp4",
-      poster: "/portfolio/indiba-icc/hero.jpg",
+      poster: "/portfolio/indiba-icc/film-poster.jpg",
       title: "INDIBA exhibition film",
+    },
+    work: {
+      formats: ["film", "vertical", "photography"],
+      featured: true,
+      film: {
+        title: "INDIBA exhibition film",
+        src: "/portfolio/indiba-icc/film.mp4",
+        poster: "/portfolio/indiba-icc/film-poster.jpg",
+        preview: "/portfolio/indiba-icc/preview.mp4",
+        duration: "1:41",
+      },
+      photos: [
+        { src: "/portfolio/indiba-icc/booth.jpg", alt: "A wide view of the INDIBA exhibition stand, treatment beds and surrounding show floor" },
+        { src: "/portfolio/indiba-icc/demonstration.jpg", alt: "Visitors gathered around an INDIBA product demonstration on the exhibition floor" },
+        { src: "/portfolio/indiba-icc/device.jpg", alt: "A close view of an INDIBA device displayed against the red exhibition stand" },
+        { src: "/portfolio/indiba-icc/team.jpg", alt: "A group portrait of the event team in front of the INDIBA exhibition stand" },
+        { src: "/portfolio/indiba-icc/activation-wall.jpg", alt: "Visitors adding a message to a reflective INDIBA Australia activation wall" },
+      ],
+    },
+    home: {
+      what: "Beauty Expo Australia stand",
+      deliverables: "Exhibition film, photography, vertical vox-pops.",
+      image: { src: "/portfolio/indiba-icc/hero.jpg", alt: "Treatment demo on the INDIBA stand", position: "56% 50%" },
     },
   },
   {
@@ -921,11 +1124,11 @@ export const caseStudies: CaseStudy[] = [
     discipline: "Film + production",
     image: "/portfolio/jo-loves/hero.jpg",
     alt: "The Jo Loves retail installation with staff positioned across the entrance",
-    scope: "Photography and film selection from the supplied retail event archive.",
+    scope: "Retail activation film and photography.",
     summary: "A bright retail event story moving from the full installation into products, visitors and the team behind the counter.",
-    challenge: "The supplied archive contains 159 photographs and five films across the Jo Loves installation, product demonstrations, visitor activity, portraits and team moments.",
-    response: "The edit uses a symmetrical storefront view as the cover, then moves through product presentation, the surrounding crowd, a visitor portrait and a full team frame. The horizontal highlight film adds setup and event movement without repeating the vertical interview edits.",
-    outcome: "A public-display-authorised film and photography selection from the supplied archive, with event title, date, location and public credits left unclaimed.",
+    challenge: "Visitors gathered around the Jo Loves retail installation while staff lined the entrance and presented fragrance at the counter.",
+    response: "First Rec. covered the activation in photographs and film: the storefront, the crowd, a visitor portrait and the full team. The highlight film condenses the event into less than a minute.",
+    outcome: "Event photography and a highlight film of the whole installation, the product in hand and the people on both sides of the counter.",
     channels: "Retail / Event / Film / Photography",
     role: "Photography / Film / Public credits to confirm",
     mediaNotice: "Public display authorised / Project details and credits to confirm",
@@ -953,8 +1156,25 @@ export const caseStudies: CaseStudy[] = [
     ],
     film: {
       src: "/portfolio/jo-loves/film.mp4",
-      poster: "/portfolio/jo-loves/hero.jpg",
+      poster: "/portfolio/jo-loves/film-poster.jpg",
       title: "Jo Loves retail event film",
+    },
+    work: {
+      what: "Retail activation",
+      deliverables: "Retail activation film and photography.",
+      formats: ["film", "photography"],
+      featured: false,
+      film: {
+        title: "Jo Loves retail event film",
+        src: "/portfolio/jo-loves/film.mp4",
+        poster: "/portfolio/jo-loves/film-poster.jpg",
+        preview: "/portfolio/jo-loves/preview.mp4",
+        duration: "0:58",
+      },
+      photos: [
+        { src: "/portfolio/jo-loves/hero.jpg", alt: "The Jo Loves retail installation with staff positioned across the entrance" },
+        { src: "/portfolio/jo-loves/crowd.jpg", alt: "Visitors gathered around the Jo Loves retail installation" },
+      ],
     },
   },
   {
@@ -964,11 +1184,11 @@ export const caseStudies: CaseStudy[] = [
     discipline: "Food + hospitality",
     image: "/portfolio/mm-karaoke/hero.jpg",
     alt: "A colourful spread of food, fruit and bottles on a karaoke table",
-    scope: "Food and hospitality photography selection and web presentation.",
+    scope: "Food and hospitality photography.",
     summary: "A vivid menu and atmosphere study balancing neon-lit social moments with clean food still life.",
-    challenge: "The supplied archive contains 193 photographs across main dishes, small plates, dim sum, desserts and shared karaoke-table scenes, with many repeated angles of the same setup.",
-    response: "The edit keeps one scene-setting cover and five distinct supporting frames: a toast, a shared noodle arrangement, fruit, corn and a clean pasta still life. Repeated plate angles stay in the source archive.",
-    outcome: "A public-display-authorised six-image selection showing both the social karaoke setting and the quieter menu photography, while venue details, dish names and public credits remain unconfirmed.",
+    challenge: "MM Karaoke's menu spanned main dishes, small plates, dim sum and desserts, served at shared karaoke tables under low light and neon.",
+    response: "First Rec. photographed the menu two ways: clean still lifes of individual dishes and shared-table scenes in the karaoke room, including a toast over a full spread.",
+    outcome: "Menu and atmosphere photography in landscape and portrait, so the food can be shown on its own or at the table where it was shared.",
     channels: "Karaoke / Dining / Menu / Social",
     role: "Food and hospitality photography / Public credits to confirm",
     mediaNotice: "Public display authorised / Project details and credits to confirm",
@@ -999,6 +1219,16 @@ export const caseStudies: CaseStudy[] = [
         ratio: "4 / 3",
       },
     ],
+    work: {
+      what: "Karaoke dining",
+      deliverables: "Food and hospitality photography.",
+      formats: ["photography"],
+      featured: false,
+      photos: [
+        { src: "/portfolio/mm-karaoke/hero.jpg", alt: "A colourful spread of food, fruit and bottles on a karaoke table" },
+        { src: "/portfolio/mm-karaoke/toast.jpg", alt: "Two people toasting over a table filled with food in a karaoke room" },
+      ],
+    },
   },
   {
     slug: "nvidia",
@@ -1007,11 +1237,11 @@ export const caseStudies: CaseStudy[] = [
     discipline: "Photography",
     image: "/portfolio/nvidia/hero.jpg",
     alt: "NVIDIA AI Day Sydney stage with a speaker, presentation screen and NVIDIA-branded lectern",
-    scope: "Event photography selection and web presentation.",
-    summary: "A technology event edit moving from branded stage presentations to auditorium scale and audience attention.",
-    challenge: "The supplied archive contains 131 photographs across the NVIDIA AI Day Sydney stage, speakers, a full auditorium and audience details, with many adjacent presentation frames.",
-    response: "The edit keeps one clear branded cover and five complementary photographs: a stage-and-audience view, a full auditorium, a closer presentation frame, a vertical speaker portrait and an audience detail.",
-    outcome: "A public-display-authorised six-image story of the stage, speakers and audience, with event date, speaker names and public credits left unclaimed.",
+    scope: "Technology event photography.",
+    summary: "A technology event told through branded stage presentations, auditorium scale and audience attention.",
+    challenge: "At NVIDIA AI Day Sydney, speakers presented to a full auditorium from a branded stage, lit in green and blue and backed by a vivid presentation screen.",
+    response: "First Rec. photographed the stage and the room, with speakers mid-presentation, wide views across the theatre and closer shots of the audience.",
+    outcome: "Photographs that capture the event at full scale and up close, on stage and in the audience.",
     channels: "Technology event / Stage / Audience / Photography",
     role: "Event photography / Public credits to confirm",
     mediaNotice: "Public display authorised / Project details and credits to confirm",
@@ -1042,6 +1272,212 @@ export const caseStudies: CaseStudy[] = [
         ratio: "3 / 2",
       },
     ],
+    work: {
+      what: "NVIDIA AI Day Sydney",
+      deliverables: "Technology event photography.",
+      formats: ["photography"],
+      featured: false,
+      photos: [
+        { src: "/portfolio/nvidia/hero.jpg", alt: "NVIDIA AI Day Sydney stage with a speaker, presentation screen and NVIDIA-branded lectern" },
+        { src: "/portfolio/nvidia/auditorium.jpg", alt: "A speaker presenting to a full auditorium during NVIDIA AI Day Sydney" },
+      ],
+    },
+  },
+  {
+    slug: "tiktok",
+    client: "TikTok",
+    category: "Live events / Highlight films",
+    discipline: "Film + production",
+    image: "/portfolio/tiktok/hero.jpg",
+    alt: "A guest signs the TikTok LIVE wall in Sydney",
+    scope: "Event filming and highlight edits in 16:9 and 9:16.",
+    summary: "Highlight films for the TikTok LIVE Creator Summit and Creators Party in Sydney.",
+    challenge: "Two TikTok LIVE events in Sydney: a creator summit at the TikTok office and a creators party on the harbour. Each needed a recap that works on a wide screen and in a vertical feed.",
+    response: "First Rec. filmed both events and cut highlight films in 16:9 and 9:16, delivered through an agency partner.",
+    outcome: "Highlight films in 16:9 and 9:16, ready for a wide screen and a vertical feed.",
+    channels: "Live events / Social / Film",
+    role: "Filming / Editing / Through an agency partner",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/tiktok/summit.jpg", alt: "Guests at the TikTok LIVE Creator Summit", ratio: "16 / 9" },
+      { image: "/portfolio/tiktok/creators-party.jpg", alt: "Creators celebrating at the TikTok LIVE Creators Party", ratio: "9 / 16" },
+    ],
+    film: { src: "/portfolio/tiktok/film.mp4", poster: "/portfolio/tiktok/film-poster.jpg", title: "TikTok LIVE Creator Summit highlight film" },
+    work: {
+      formats: ["film", "vertical"],
+      featured: true,
+      film: {
+        title: "TikTok LIVE Creator Summit highlight film",
+        src: "/portfolio/tiktok/film.mp4",
+        poster: "/portfolio/tiktok/film-poster.jpg",
+        preview: "/portfolio/tiktok/preview.mp4",
+        duration: "0:54",
+      },
+      verticals: ["tiktok-creators-party", "tiktok-creator-summit"],
+      photos: [],
+    },
+    home: {
+      what: "TikTok LIVE Creator Summit + Creators Party, Sydney",
+      deliverables: "Highlight films in 16:9 and 9:16.",
+      image: { src: "/portfolio/tiktok/hero.jpg", alt: "A guest signs the TikTok LIVE wall in Sydney", position: "72% 50%" },
+      inset: { src: "/portfolio/tiktok/summit.jpg", alt: "Guests at the TikTok LIVE Creator Summit" },
+    },
+  },
+  {
+    slug: "srw",
+    client: "SRW Laboratories",
+    category: "Brand launch / Film + photography",
+    discipline: "Film + production",
+    image: "/portfolio/srw/hero.jpg",
+    alt: "Group photo by the pool at Bondi Icebergs for the SRW launch",
+    scope: "Launch films in English and event photography.",
+    summary: "A brand launch at Bondi Icebergs, filmed and photographed from the poolside programme to the evening.",
+    challenge: "SRW Laboratories launched at Bondi Icebergs with a day programme by the pool, founder and guest speakers, and an evening event. The launch needed films in English and a full photo record.",
+    response: "First Rec. ran a multi-camera crew with drone coverage through the day and into the night, then cut a set of launch films in English. Delivered through an agency partner.",
+    outcome: "Launch films in English and event photography covering the pool, the speakers and the night.",
+    channels: "Brand launch / Event / Film / Photography",
+    role: "Filming / Photography / Editing / Through an agency partner",
+    date: "2024",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/srw/film.mp4", poster: "/portfolio/srw/film-poster.jpg", title: "SRW Laboratories launch film" },
+    work: {
+      formats: ["film", "photography"],
+      featured: true,
+      film: {
+        title: "SRW Laboratories launch film",
+        src: "/portfolio/srw/film.mp4",
+        poster: "/portfolio/srw/hero.jpg",
+        preview: "/portfolio/srw/preview.mp4",
+        duration: "0:45",
+      },
+      photos: [
+        { src: "/portfolio/srw/hero.jpg", alt: "Group photo by the pool at Bondi Icebergs for the SRW launch" },
+        { src: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch" },
+      ],
+    },
+    home: {
+      name: "SRW",
+      what: "Brand launch, Bondi Icebergs",
+      deliverables: "Launch films in English, event photography.",
+      image: { src: "/portfolio/srw/hero.jpg", alt: "Group photo by the pool at Bondi Icebergs for the SRW launch", position: "50% 62%" },
+      inset: { src: "/portfolio/srw/night-pool.jpg", alt: "Bondi Icebergs pool at night during the SRW launch" },
+    },
+  },
+  {
+    slug: "dreame",
+    client: "Dreame",
+    category: "Brand event / Event film",
+    discipline: "Film + production",
+    image: "/portfolio/dreame/hero.jpg",
+    alt: "Guests in front of the DREAME letter wall",
+    scope: "Event recap film.",
+    summary: "A recap film of Dreame's brand event in Melbourne.",
+    challenge: "Dreame's brand event brought keynotes, product displays and guests into one space.",
+    response: "First Rec. filmed the event and cut a recap film that moves from the keynote to the product floor.",
+    outcome: "An event recap film in 16:9 and 9:16.",
+    channels: "Brand event / Film",
+    role: "Filming / Editing",
+    mediaNotice: "Public display authorised / Event recap",
+    gallery: [
+      { image: "/portfolio/dreame/keynote.jpg", alt: "A speaker on stage at the Dreame brand event", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/dreame/film.mp4", poster: "/portfolio/dreame/showroom.jpg", title: "Dreame brand event recap film" },
+    work: {
+      formats: ["film"],
+      featured: true,
+      film: {
+        title: "Dreame brand event recap film",
+        src: "/portfolio/dreame/film.mp4",
+        poster: "/portfolio/dreame/hero.jpg",
+        preview: "/portfolio/dreame/preview.mp4",
+        duration: "1:15",
+      },
+      photos: [],
+    },
+    home: {
+      what: "Brand event",
+      deliverables: "Event recap film.",
+      image: { src: "/portfolio/dreame/hero.jpg", alt: "Guests in front of the DREAME letter wall", position: "52% 50%" },
+    },
+  },
+  {
+    slug: "narwal",
+    client: "Narwal",
+    category: "Product launch / Event film",
+    discipline: "Film + production",
+    image: "/portfolio/narwal/hero.jpg",
+    alt: "A yacht on Sydney Harbour by the Opera House for the Narwal FLOW launch",
+    scope: "Launch film and highlight cut.",
+    summary: "Narwal's FLOW launch on Sydney Harbour, from the product reveal to the guests.",
+    challenge: "Narwal launched its FLOW range in Sydney with a harbourside event, product demonstrations and presentations for guests.",
+    response: "First Rec. filmed the launch, including the harbour from the air, and cut a three-minute launch film and a highlight cut. Delivered through an agency partner.",
+    outcome: "A three-minute launch film and a highlight cut of the FLOW launch.",
+    channels: "Product launch / Event / Film",
+    role: "Filming / Editing / Through an agency partner",
+    mediaNotice: "Public display authorised / Agency partner project",
+    gallery: [
+      { image: "/portfolio/narwal/flow.jpg", alt: "The Narwal FLOW range on display at the Sydney launch", ratio: "16 / 9" },
+      { image: "/portfolio/narwal/guests.jpg", alt: "Guests watching a presentation at the Narwal launch", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/narwal/film.mp4", poster: "/portfolio/narwal/film-poster.jpg", title: "Narwal FLOW launch highlight film" },
+    work: {
+      formats: ["film"],
+      featured: true,
+      film: {
+        title: "Narwal FLOW launch highlight film",
+        src: "/portfolio/narwal/film.mp4",
+        poster: "/portfolio/narwal/film-poster.jpg",
+        preview: "/portfolio/narwal/preview.mp4",
+        duration: "1:43",
+      },
+      photos: [],
+    },
+    home: {
+      what: "FLOW launch on Sydney Harbour",
+      deliverables: "Launch film and highlight cut.",
+      image: { src: "/portfolio/narwal/hero.jpg", alt: "A yacht on Sydney Harbour by the Opera House for the Narwal FLOW launch", position: "30% 50%" },
+    },
+  },
+  {
+    slug: "inner-health",
+    client: "Inner Health",
+    category: "Corporate film",
+    discipline: "Film + production",
+    image: "/portfolio/inner-health/hero.jpg",
+    alt: "A scientist at work in the Inner Health lab",
+    scope: "Corporate film with short cuts and a Mandarin-subtitled version.",
+    summary: "A corporate film on Inner Health's science, from the lab to the product.",
+    challenge: "Inner Health needed one film that explains its research and manufacturing, with versions for different screens and for Mandarin-speaking audiences.",
+    response: "First Rec. filmed in the lab and around the facility, then delivered a four-minute film, 59-second cuts in 16:9 and 9:16, and a Mandarin-subtitled version.",
+    outcome: "A four-minute film, 59-second cuts in 16:9 and 9:16 and a Mandarin-subtitled version.",
+    channels: "Corporate / Film",
+    role: "Filming / Editing",
+    mediaNotice: "Public display authorised / Corporate film",
+    gallery: [
+      { image: "/portfolio/inner-health/facility.jpg", alt: "An aerial view of the Inner Health facility", ratio: "16 / 9" },
+      { image: "/portfolio/inner-health/products.jpg", alt: "Inner Health probiotic products", ratio: "16 / 9" },
+    ],
+    film: { src: "/portfolio/inner-health/film.mp4", poster: "/portfolio/inner-health/film-poster.jpg", title: "Inner Health 59-second film" },
+    work: {
+      formats: ["film", "vertical"],
+      featured: true,
+      film: {
+        title: "Inner Health 59-second film",
+        src: "/portfolio/inner-health/film.mp4",
+        poster: "/portfolio/inner-health/film-poster.jpg",
+        preview: "/portfolio/inner-health/preview.mp4",
+        duration: "0:58",
+      },
+      photos: [],
+    },
+    home: {
+      what: "Corporate film",
+      deliverables: "4-minute film, 59-second cuts in 16:9 and 9:16, Mandarin-subtitled version.",
+      image: { src: "/portfolio/inner-health/hero.jpg", alt: "A scientist at work in the Inner Health lab", position: "76% 50%" },
+    },
   },
   {
     slug: "emp-dairy-lactoferrin",

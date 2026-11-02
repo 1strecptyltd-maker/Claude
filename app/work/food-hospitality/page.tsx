@@ -2,29 +2,32 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactBand } from "../../_components/ContactBand";
 import { PageShell } from "../../_components/PageShell";
-import { caseStudies } from "../../_data/site";
+import { isPublic, listedCaseStudies } from "../../_data/publication";
 
 export const metadata: Metadata = {
   title: "Food + hospitality | First Rec.",
-  description: "A locally ingested selection of food, service and hospitality imagery prepared for internal review.",
+  description: "Food, service and hospitality imagery shaped around appetite, spaces and social-ready product frames.",
 };
 export const dynamic = "force-static";
 
-const projects = caseStudies.filter((project) => project.discipline === "Food + hospitality");
+const projects = listedCaseStudies().filter((project) => project.discipline === "Food + hospitality");
+const hasInternalReview = projects.some((project) => !isPublic(project.slug));
 
+// vinext's static export fails the build on a non-200 static route, so this page cannot be skipped when it is
+// empty. It renders an honest empty state instead, and /work/ stops linking to it.
 export default function FoodHospitalityPage() {
   return (
-    <PageShell>
+    <PageShell current="/work/">
       <header className="page-hero page-hero--work">
         <p className="eyebrow">Food + hospitality</p>
         <h1>Made to be<br />looked at hungry.</h1>
-        <p>A first local selection from the user-approved Google Drive archive, shaped around food, spaces, service and social-ready product frames.</p>
+        <p>Food, spaces, service and social-ready product frames for hospitality teams.</p>
       </header>
-      <aside className="preview-note">Internal review assets / The Drive approval record does not confirm public clearance, final credits or identifiable-person permissions.</aside>
+      {hasInternalReview ? <aside className="preview-note">Internal review assets / The Drive approval record does not confirm public clearance, final credits or identifiable-person permissions.</aside> : null}
       <section className="work-index" aria-label="Food and hospitality case studies">
         <div className="section-heading">
-          <h2>{projects.length} selected projects.</h2>
-          <p>Each set is intentionally compact and uses only images downloaded from the approved source folders.</p>
+          <h2>{projects.length ? `${projects.length} selected ${projects.length === 1 ? "project" : "projects"}.` : "No projects published yet."}</h2>
+          <p>{projects.length ? "Each set is intentionally compact." : "Food and hospitality projects will appear here once they are cleared for publication."}</p>
         </div>
         <div className="work-category-list">
           {projects.map((project, index) => (

@@ -36,6 +36,13 @@ const eslintConfig = defineConfig([
       },
     },
   },
+  {
+    // The static multi-page site navigates with plain anchors on purpose (no client router JS). This rule also
+    // reads app/work/[slug] as matching "/work/" itself, so it flags the work index link as a page route.
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
